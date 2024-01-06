@@ -12,6 +12,8 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/meilisearch/meilisearch-go v0.26.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/sabloger/sitemap-generator v1.2.2
+	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.18.2
 	github.com/wneessen/go-mail v0.4.0
 	github.com/yuin/goldmark v1.6.0
@@ -20,7 +22,6 @@ require (
 	go.abhg.dev/goldmark/mermaid v0.5.0
 	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc
 	golang.org/x/net v0.19.0
-	golang.org/x/text v0.14.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -53,7 +54,6 @@ require (
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
-	github.com/speps/go-hashids/v2 v2.0.1 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -65,6 +65,7 @@ require (
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.16.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/feeds"
+	"github.com/sabloger/sitemap-generator/smg"
 	"os"
 	"path/filepath"
 	"time"
@@ -101,6 +102,59 @@ func (app *application) writeFeeds(postMetadata []PostMetadata) error {
 		if err != nil {
 			return fmt.Errorf("failed to brotli: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func (app *application) writeSitemap(postMetadata []PostMetadata) error {
+	lastUpdated := time.Now()
+	for _, post := range postMetadata {
+		var updated time.Time
+		if post.Updated != "" {
+			var err error
+			updated, err = time.Parse(time.RFC3339, post.Updated)
+			if err != nil {
+				return fmt.Errorf("failed to parse updated time: %w", err)
+			}
+
+			if updated.After(lastUpdated) {
+				lastUpdated = updated
+			}
+		}
+	}
+
+	sm := smg.NewSitemap(true)
+	sm.SetName(app.config.Blog.Title)
+	sm.SetHostname(app.config.Blog.Url)
+	sm.SetOutputPath(app.config.Blog.PostDir)
+	sm.SetLastMod(&lastUpdated)
+	sm.SetCompress(true)
+
+	for _, post := range postMetadata {
+		var updated time.Time
+		if post.Updated != "" {
+			var err error
+			updated, err = time.Parse(time.RFC3339, post.Updated)
+			if err != nil {
+				return fmt.Errorf("failed to parse updated time: %w", err)
+			}
+		}
+
+		err := sm.Add(&smg.SitemapLoc{
+			Loc:        post.Url,
+			LastMod:    &updated,
+			ChangeFreq: smg.Yearly,
+			Priority:   0.7,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to add sitemap loc: %w", err)
+		}
+	}
+
+	_, err := sm.Save()
+	if err != nil {
+		return fmt.Errorf("failed to save sitemap: %w", err)
 	}
 
 	return nil

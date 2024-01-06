@@ -35,6 +35,11 @@ func (app *application) updatePosts() error {
 			return err
 		}
 
+		err = app.writeSitemap(postMetadatas)
+		if err != nil {
+			return err
+		}
+
 		err = app.searchService.DeleteAll()
 		if err != nil {
 			return err
