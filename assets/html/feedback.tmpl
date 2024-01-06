@@ -24,7 +24,7 @@
     <p class="indexsubtitle">Send some feedback</p>
   </header>
 
-  <form action="/submitFeedback" method="post">
+  <form class="feedback" action="/submitFeedback" method="post">
      <div>
 	  	 <h3>Re: {{ .PostUrl }}</h3>
 	  	 <input type="hidden" name="url" value="{{ .PostUrl }}">

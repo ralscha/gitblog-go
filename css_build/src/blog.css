@@ -52,17 +52,16 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --background-color: #1e1e1e;
+        --background-color: #0d1117;
         --text-color-1: #fff;
         --text-color-2: #eee;
-        --index-article: #0000EE;
-        --index-article-hover: #5151f7;
-        --index-article-link: #2196f3;
+        --index-article: #8080FF;
+        --index-article-hover: #B2B2FF;
+        --index-article-link: #80CCFF;
         --header-bottom: #333;
         --paragraph-text: #aaa;
         --heading-color: #fff;
-        --ancor-color: lightgray;
-        --token-background: #2f2f2f;
+        --ancor-color: #404040;
     }
 }
 
@@ -78,7 +77,6 @@
         --paragraph-text: #888;
         --heading-color: #24292e;
         --ancor-color: lightgray;
-        --token-background: #f6f8fa;
     }
 }
 
@@ -118,6 +116,10 @@ header, .indexarticle {
     color: var(--text-color-2);
 }
 
+.indexsubtitle .small a {
+    color: var(--index-article-link);
+}
+
 .query {
     margin-top: 25px;
     font-size: 20px;
@@ -130,6 +132,14 @@ header, .indexarticle {
 
 .query form input[type=search] {
     width: 270px;
+}
+
+.query a {
+    color: var(--index-article-link);
+}
+
+.query strong {
+    color: var(--index-article);
 }
 
 article.indexarticle h3 {
@@ -177,6 +187,19 @@ header p {
 header p a {
     color: var(--index-article-link);
     text-decoration: none;
+}
+
+header p a:hover {
+    color: var(--index-article-hover);
+    text-decoration: none;
+}
+
+footer a, header a {
+    color: var(--index-article-link);
+}
+
+footer a, header a:hover {
+    color: var(--index-article-hover);
 }
 
 .markdown-body {
@@ -277,9 +300,13 @@ header > h1 {
 .token.entity,
 .token.operator,
 .token.url {
-    background-color: var(--token-background);
+    background-color: transparent !important;
 }
 
 :focus:not(:focus-visible) {
     outline: none
+}
+
+.feedback {
+    color: var(--text-color-1);
 }
