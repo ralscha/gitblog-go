@@ -125,11 +125,11 @@ func (app *application) writeSitemap(postMetadata []PostMetadata) error {
 	}
 
 	sm := smg.NewSitemap(true)
-	sm.SetName(app.config.Blog.Title)
+	sm.SetName("sitemap")
 	sm.SetHostname(app.config.Blog.Url)
 	sm.SetOutputPath(app.config.Blog.PostDir)
 	sm.SetLastMod(&lastUpdated)
-	sm.SetCompress(true)
+	sm.SetCompress(false)
 
 	for _, post := range postMetadata {
 		var updated time.Time
