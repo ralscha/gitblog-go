@@ -235,6 +235,11 @@ header > h1 {
 	margin-top: 20px;
 }
 
+.markdown-body .anchor {
+	font-size: 0.9em;
+    color: lightgray !important;
+    padding-top: 2px;
+}
 
 .language-css 
 .token.string,
