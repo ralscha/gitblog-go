@@ -49,6 +49,11 @@ func (app *application) updatePosts() error {
 		if err != nil {
 			return err
 		}
+
+		err = app.pingGoogle()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
