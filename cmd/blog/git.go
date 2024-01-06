@@ -24,6 +24,7 @@ func (app *application) pullPosts() error {
 	}
 
 	if newDir {
+		app.logger.Info("cloning posts repo", "url", app.config.Github.Url)
 		_, err := git.PlainClone(postsDir, false, &git.CloneOptions{
 			URL:      app.config.Github.Url,
 			Progress: os.Stdout,
@@ -33,6 +34,7 @@ func (app *application) pullPosts() error {
 			return err
 		}
 	} else {
+		app.logger.Info("pulling posts repo", "url", app.config.Github.Url)
 		repo, err := git.PlainOpen(postsDir)
 		if err != nil {
 			return err
