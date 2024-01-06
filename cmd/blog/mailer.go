@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/wneessen/go-mail"
+	"regexp"
 	"time"
 )
 
@@ -26,6 +27,8 @@ func NewMailer(host string, port int, username, password, from string) (*Mailer,
 	return mailer, nil
 }
 
+var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+
 func (m *Mailer) SendFeedback(email, url, feedback string) error {
 	msg := mail.NewMsg()
 
@@ -40,9 +43,13 @@ func (m *Mailer) SendFeedback(email, url, feedback string) error {
 	}
 
 	if email != "" {
-		err = msg.ReplyTo(email)
-		if err != nil {
-			return err
+		if emailRegex.MatchString(email) {
+			err = msg.ReplyTo(email)
+			if err != nil {
+				return err
+			}
+		} else {
+			feedback += "\n\nSender email: " + email
 		}
 	}
 
