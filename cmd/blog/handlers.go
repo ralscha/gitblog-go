@@ -23,10 +23,13 @@ func (app *application) githubCallbackHandler(w http.ResponseWriter, r *http.Req
 
 	_, ok := event.(*github.PushEvent)
 	if ok {
-		err := app.updatePosts()
-		if err != nil {
-			app.reportServerError(r, err)
-		}
+		app.backgroundTask(r, func() error {
+			err := app.updatePosts()
+			if err != nil {
+				app.reportServerError(r, err)
+			}
+			return nil
+		})
 	}
 
 	w.WriteHeader(http.StatusNoContent)
