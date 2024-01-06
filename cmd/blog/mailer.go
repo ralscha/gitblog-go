@@ -13,8 +13,8 @@ type Mailer struct {
 	from   string
 }
 
-func NewMailer(host string, port int, username, password, from string) (*Mailer, error) {
-	client, err := mail.NewClient(host, mail.WithTimeout(defaultTimeout), mail.WithSMTPAuth(mail.SMTPAuthLogin), mail.WithPort(port), mail.WithUsername(username), mail.WithPassword(password))
+func NewMailer(host string, port int, from string) (*Mailer, error) {
+	client, err := mail.NewClient(host, mail.WithTimeout(defaultTimeout), mail.WithPort(port))
 	if err != nil {
 		return nil, err
 	}

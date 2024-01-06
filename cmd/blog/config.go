@@ -13,11 +13,9 @@ type Config struct {
 		DefaultShutdownPeriodInSeconds int64
 	}
 	Smtp struct {
-		Host     string
-		Port     int
-		Username string
-		Password string
-		Sender   string
+		Host   string
+		Port   int
+		Sender string
 	}
 	Github struct {
 		Url           string

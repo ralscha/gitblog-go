@@ -45,8 +45,6 @@ func run(logger *slog.Logger) error {
 
 	mailer, err := NewMailer(cfg.Smtp.Host,
 		cfg.Smtp.Port,
-		cfg.Smtp.Username,
-		cfg.Smtp.Password,
 		cfg.Smtp.Sender)
 	if err != nil {
 		return err
