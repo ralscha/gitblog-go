@@ -262,6 +262,9 @@ func (app *application) convertChangedMarkdowns() (bool, error) {
 				return false, fmt.Errorf("failed to get html file info: %w", err)
 			}
 		} else {
+			app.logger.Info("html file exists", "file", htmlFile)
+			app.logger.Info("html mod time", "time", htmlFileInfo.ModTime())
+			app.logger.Info("markdown mod time", "time", markdownFileInfo.ModTime())
 			if htmlFileInfo.ModTime().After(markdownFileInfo.ModTime()) {
 				// html file is newer, skip conversion
 				continue
