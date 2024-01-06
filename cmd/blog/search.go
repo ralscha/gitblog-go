@@ -22,7 +22,13 @@ func NewSearchService(config Config) (*SearchService, error) {
 		APIKey: config.Meilisearch.Key,
 	})
 
-	_, err := c.Index(IndexName).UpdateFilterableAttributes(&[]string{"publishedYear", "tags"})
+	index := c.Index(IndexName)
+
+	task, err := index.UpdateFilterableAttributes(&[]string{"publishedYear", "tags"})
+	if err != nil {
+		return nil, err
+	}
+	_, err = index.WaitForTask(task.TaskUID)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +41,7 @@ func NewSearchService(config Config) (*SearchService, error) {
 	}
 	var response meilisearch.DocumentsResult
 
-	err = c.Index(IndexName).GetDocuments(&request, &response)
+	err = index.GetDocuments(&request, &response)
 	if err != nil {
 		return nil, err
 	}
