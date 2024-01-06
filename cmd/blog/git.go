@@ -1,10 +1,11 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"os"
+	"os/exec"
 )
 
 func (app *application) pullPosts() error {
@@ -24,7 +25,6 @@ func (app *application) pullPosts() error {
 	}
 
 	if newDir {
-		app.logger.Info("cloning posts repo", "url", app.config.Github.Url)
 		_, err := git.PlainClone(postsDir, false, &git.CloneOptions{
 			URL:      app.config.Github.Url,
 			Progress: os.Stdout,
@@ -34,20 +34,12 @@ func (app *application) pullPosts() error {
 			return err
 		}
 	} else {
-		app.logger.Info("pulling posts repo", "url", app.config.Github.Url)
-		repo, err := git.PlainOpen(postsDir)
-		if err != nil {
-			return err
-		}
+		cmd := exec.Command("git", "pull")
+		cmd.Dir = postsDir
 
-		worktree, err := repo.Worktree()
+		err := cmd.Run()
 		if err != nil {
-			return err
-		}
-
-		err = worktree.Pull(&git.PullOptions{RemoteName: "origin", Auth: auth})
-		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-			return err
+			return fmt.Errorf("error pulling posts: %w", err)
 		}
 	}
 	return nil
