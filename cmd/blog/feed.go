@@ -157,5 +157,16 @@ func (app *application) writeSitemap(postMetadata []PostMetadata) error {
 		return fmt.Errorf("failed to save sitemap: %w", err)
 	}
 
+	// compress sitemap
+	err = compressFileWithGzip(filepath.Join(app.config.Blog.PostDir, "sitemap.xml"))
+	if err != nil {
+		return fmt.Errorf("failed to gzip: %w", err)
+	}
+
+	err = compressFileWithBrotli(filepath.Join(app.config.Blog.PostDir, "sitemap.xml"))
+	if err != nil {
+		return fmt.Errorf("failed to brotli: %w", err)
+	}
+
 	return nil
 }
