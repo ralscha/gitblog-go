@@ -38,6 +38,7 @@ tasks:
       - go build -ldflags='-s' gitblog/cmd/blog
 
   install:
-    deps: [build]
     cmds:
+      - git pull
+      - task: build
       - systemctl restart gitblog-go
