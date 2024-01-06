@@ -269,6 +269,7 @@ func (app *application) convertChangedMarkdowns() (bool, error) {
 		}
 
 		changed = true
+		app.logger.Info("converting markdown", "file", markdownFile)
 		err = app.convert(markdownFile)
 		if err != nil {
 			return false, fmt.Errorf("failed to convert markdown: %w", err)
