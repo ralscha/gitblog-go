@@ -5,23 +5,23 @@ go 1.21.5
 require (
 	codnect.io/chrono v1.1.3
 	github.com/andybalholm/brotli v1.1.0
-	github.com/go-chi/chi/v5 v5.0.11
+	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/feeds v1.1.2
 	github.com/hashicorp/go-retryablehttp v0.7.5
-	github.com/meilisearch/meilisearch-go v0.26.1
+	github.com/meilisearch/meilisearch-go v0.26.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/sabloger/sitemap-generator v1.3.0
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.18.2
-	github.com/wneessen/go-mail v0.4.0
-	github.com/yuin/goldmark v1.6.0
+	github.com/wneessen/go-mail v0.4.1
+	github.com/yuin/goldmark v1.7.0
 	github.com/yuin/goldmark-emoji v1.0.2
 	go.abhg.dev/goldmark/anchor v0.1.1
 	go.abhg.dev/goldmark/mermaid v0.5.0
-	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
-	golang.org/x/net v0.20.0
+	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
+	golang.org/x/net v0.21.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -43,7 +43,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.17.5 // indirect
+	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -59,14 +59,14 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.51.0 // indirect
+	github.com/valyala/fasthttp v1.52.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
-	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/crypto v0.20.0 // indirect
+	golang.org/x/mod v0.15.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools v0.17.0 // indirect
+	golang.org/x/tools v0.18.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
