@@ -22,6 +22,9 @@ func (c *dockerCLI) CommandContext(ctx context.Context, args ...string) *exec.Cm
 	baseDir := dir[:strings.LastIndex(dir, "/")]
 	filename := dir[strings.LastIndex(dir, "/")+1:]
 
+	// change permission of the file to 666
+	_ = exec.Command("chmod", "666", dir).Run()
+
 	args[1] = filename
 	args[3] = args[3][len(baseDir)+1:]
 
