@@ -26,6 +26,7 @@ func (c *dockerCLI) CommandContext(ctx context.Context, args ...string) *exec.Cm
 	_ = exec.Command("chmod", "666", dir).Run()
 
 	args[1] = filename
+	_ = exec.Command("chmod", "666", args[3]).Run()
 	args[3] = args[3][len(baseDir)+1:]
 
 	path := "docker"
