@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gorilla/feeds"
 	"github.com/sabloger/sitemap-generator/smg"
-	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -167,33 +166,6 @@ func (app *application) writeSitemap(postMetadata []PostMetadata) error {
 	err = compressFileWithBrotli(filepath.Join(app.config.Blog.PostDir, "sitemap.xml"))
 	if err != nil {
 		return fmt.Errorf("failed to brotli: %w", err)
-	}
-
-	return nil
-}
-
-func (app *application) pingGoogle() error {
-	sitemapUrl := app.config.Blog.Url + "sitemap.xml"
-	httpClient := http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	req, err := http.NewRequest(http.MethodGet, "https://google.com/ping", nil)
-	if err != nil {
-		return fmt.Errorf("failed to create ping request: %w", err)
-	}
-
-	q := req.URL.Query()
-	q.Add("sitemap", sitemapUrl)
-	req.URL.RawQuery = q.Encode()
-
-	res, err := httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to ping google: %w", err)
-	}
-
-	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return fmt.Errorf("failed to ping google: %s", res.Status)
 	}
 
 	return nil
