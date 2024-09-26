@@ -19,8 +19,8 @@ func (c *dockerCLI) CommandContext(ctx context.Context, args ...string) *exec.Cm
 	// docker run --rm -u `id -u`:`id -g` -v /path/to/diagrams:/data minlag/mermaid-cli -i diagram.mmd
 
 	dir := args[1]
-	baseDir := dir[:strings.LastIndex(dir, "\\")]
-	filename := dir[strings.LastIndex(dir, "\\")+1:]
+	baseDir := dir[:strings.LastIndex(dir, "/")]
+	filename := dir[strings.LastIndex(dir, "/")+1:]
 
 	args[1] = filename
 	args[3] = args[3][len(baseDir)+1:]
