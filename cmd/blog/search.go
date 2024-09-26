@@ -12,15 +12,12 @@ const (
 )
 
 type SearchService struct {
-	client         *meilisearch.Client
+	client         meilisearch.ServiceManager
 	publishedYears []int
 }
 
 func NewSearchService(config Config) (*SearchService, error) {
-	c := meilisearch.NewClient(meilisearch.ClientConfig{
-		Host:   config.Meilisearch.Host,
-		APIKey: config.Meilisearch.Key,
-	})
+	c := meilisearch.New(config.Meilisearch.Host, meilisearch.WithAPIKey(config.Meilisearch.Key))
 
 	index := c.Index(IndexName)
 
@@ -28,7 +25,7 @@ func NewSearchService(config Config) (*SearchService, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = index.WaitForTask(task.TaskUID)
+	_, err = index.WaitForTask(task.TaskUID, 5*time.Second)
 	if err != nil {
 		return nil, err
 	}
