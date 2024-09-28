@@ -292,6 +292,17 @@ header > h1 {
     font-size: 0.9em;
     color: var(--ancor-color) !important;
     padding-top: 2px;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+.markdown-body h1:hover .anchor,
+.markdown-body h2:hover .anchor,
+.markdown-body h3:hover .anchor,
+.markdown-body h4:hover .anchor,
+.markdown-body h5:hover .anchor,
+.markdown-body h6:hover .anchor {
+    opacity: 1;
 }
 
 .language-css,
