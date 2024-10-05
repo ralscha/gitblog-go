@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -183,7 +182,25 @@ func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		slices.SortFunc(posts, func(a, b PostMetadata) int {
-			return strings.Compare(b.Published, a.Published)
+			// return strings.Compare(b.Published, a.Published)
+			// published, err := time.Parse(time.RFC3339, post.Published)
+			publishedA, err := time.Parse(time.RFC3339, a.Published)
+			if err != nil {
+				app.reportServerError(r, err)
+				return 0
+			}
+			publishedB, err := time.Parse(time.RFC3339, b.Published)
+			if err != nil {
+				app.reportServerError(r, err)
+				return 0
+			}
+			if publishedA.After(publishedB) {
+				return 1
+			}
+			if publishedA.Before(publishedB) {
+				return -1
+			}
+			return 0
 		})
 
 		yearNavigation := make([]YearNavigation, len(publishedYears))
