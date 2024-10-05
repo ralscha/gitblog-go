@@ -180,6 +180,11 @@ func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+			// Sort posts in descending order by date
+		slices.SortFunc(posts, func(a, b PostMetadata) bool {
+			return a.Published > b.Published
+		})
+
 		yearNavigation := make([]YearNavigation, len(publishedYears))
 		for i, y := range publishedYears {
 			yearNavigation[i] = YearNavigation{

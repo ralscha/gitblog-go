@@ -137,6 +137,12 @@ func (s *SearchService) SearchPostsOfYear(year int) ([]PostMetadata, error) {
 	}
 
 	posts := s.mapToPostMetadata(response)
+
+	// Sort posts in descending order by date
+	slices.SortFunc(posts, func(a, b PostMetadata) bool {
+		return a.Published > b.Published
+	})
+
 	return posts, nil
 }
 
