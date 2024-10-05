@@ -1,6 +1,6 @@
 package main
 
-import "golang.org/x/exp/slices"
+import "time"
 
 type Post struct {
 	Title       string
@@ -23,12 +23,6 @@ type YearNavigation struct {
 	Current bool
 }
 
-func sortYearNavigation(years []YearNavigation) {
-	slices.SortFunc(years, func(i, j YearNavigation) int {
-		return i.Year - j.Year
-	})
-}
-
 type PostMetadata struct {
 	Draft        bool
 	Url          string
@@ -38,6 +32,7 @@ type PostMetadata struct {
 	Title        string
 	Tags         []string
 	Published    string
+	PublishedTs  time.Time
 	Updated      string
 	Summary      string
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/go-github/v57/github"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 )
@@ -179,6 +180,10 @@ func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+
+		slices.SortFunc(posts, func(a, b PostMetadata) int {
+			return int(b.PublishedTs.Unix() - a.PublishedTs.Unix())
+		})
 
 		yearNavigation := make([]YearNavigation, len(publishedYears))
 		for i, y := range publishedYears {
