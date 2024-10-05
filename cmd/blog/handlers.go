@@ -182,7 +182,7 @@ func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		slices.SortFunc(posts, func(a, b PostMetadata) int {
-			return int(b.PublishedTs.Unix() - a.PublishedTs.Unix())
+			return int(a.PublishedTs.Unix() - b.PublishedTs.Unix())
 		})
 
 		yearNavigation := make([]YearNavigation, len(publishedYears))
