@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/meilisearch/meilisearch-go"
-	"golang.org/x/exp/slices"
+	"slices"
 	"strconv"
 	"time"
 )
