@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/go-github/v57/github"
 	"net/http"
@@ -179,6 +180,10 @@ func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
 				app.reportServerError(r, err)
 				return
 			}
+		}
+
+		for _, post := range posts {
+			fmt.Println(post.PublishedTs)
 		}
 
 		slices.SortFunc(posts, func(a, b PostMetadata) int {
