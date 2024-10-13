@@ -1,10 +1,10 @@
 module gitblog
 
-go 1.23.1
+go 1.23.2
 
 require (
 	codnect.io/chrono v1.1.3
-	github.com/andybalholm/brotli v1.1.0
+	github.com/andybalholm/brotli v1.1.1
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/google/go-github/v57 v57.0.0
@@ -15,9 +15,9 @@ require (
 	github.com/sabloger/sitemap-generator v1.3.0
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.19.0
-	github.com/wneessen/go-mail v0.4.4
-	github.com/yuin/goldmark v1.7.4
-	github.com/yuin/goldmark-emoji v1.0.3
+	github.com/wneessen/go-mail v0.5.0
+	github.com/yuin/goldmark v1.7.6
+	github.com/yuin/goldmark-emoji v1.0.4
 	go.abhg.dev/goldmark/anchor v0.1.1
 	go.abhg.dev/goldmark/mermaid v0.5.0
 	golang.org/x/net v0.30.0
@@ -28,8 +28,8 @@ require (
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
-	github.com/cloudflare/circl v1.4.0 // indirect
-	github.com/cyphar/filepath-securejoin v0.3.3 // indirect
+	github.com/cloudflare/circl v1.5.0 // indirect
+	github.com/cyphar/filepath-securejoin v0.3.4 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
@@ -59,7 +59,7 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.28.0 // indirect
-	golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6 // indirect
+	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
