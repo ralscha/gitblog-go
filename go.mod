@@ -15,8 +15,8 @@ require (
 	github.com/sabloger/sitemap-generator v1.3.0
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.19.0
-	github.com/wneessen/go-mail v0.5.0
-	github.com/yuin/goldmark v1.7.6
+	github.com/wneessen/go-mail v0.5.1
+	github.com/yuin/goldmark v1.7.8
 	github.com/yuin/goldmark-emoji v1.0.4
 	go.abhg.dev/goldmark/anchor v0.1.1
 	go.abhg.dev/goldmark/mermaid v0.5.0
@@ -33,7 +33,7 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.5.0 // indirect
+	github.com/go-git/go-billy/v5 v5.6.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
