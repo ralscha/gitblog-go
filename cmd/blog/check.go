@@ -117,7 +117,11 @@ func (app *application) checkBrokenLinks() {
 		fmt.Println("No broken links found.")
 	}
 
-	tmpl := template.Must(template.ParseFS(assets.EmbeddedHtml, "html/urlcheck.tmpl"))
+	tmpl, err := template.ParseFS(assets.EmbeddedHtml, "html/urlcheck.tmpl")
+	if err != nil {
+		app.logger.Error(err.Error())
+		return
+	}
 
 	var output strings.Builder
 	err = tmpl.Execute(&output, urlChecks)
