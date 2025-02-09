@@ -8,6 +8,7 @@ type Post struct {
 	Published   string
 	Updated     string
 	FeedbackUrl string
+	Url         string
 	Tags        []string
 }
 

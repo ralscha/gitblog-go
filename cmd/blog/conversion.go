@@ -96,6 +96,7 @@ func (app *application) convert(markdownFile string) error {
 		Updated:     postUpdated,
 		Tags:        header.Tags,
 		FeedbackUrl: feedbackUrl,
+		Url:         app.config.Blog.Url + url,
 	}
 
 	tmpl := template.Must(template.ParseFS(assets.EmbeddedHtml, "html/post.tmpl"))
