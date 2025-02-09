@@ -3,9 +3,9 @@
     font-style: normal;
     font-weight: 400;
     src: url('fonts/OpenSans-Regular.woff2') format('woff2'),
-         url('fonts/OpenSans-Regular.woff') format('woff'),
-         url('fonts/OpenSans-Regular.ttf') format('truetype'),
-         url('fonts/OpenSans-Regular.eot') format('embedded-opentype');
+    url('fonts/OpenSans-Regular.woff') format('woff'),
+    url('fonts/OpenSans-Regular.ttf') format('truetype'),
+    url('fonts/OpenSans-Regular.eot') format('embedded-opentype');
 }
 
 @font-face {
@@ -13,9 +13,9 @@
     font-style: italic;
     font-weight: 400;
     src: url('fonts/OpenSans-Italic.woff2') format('woff2'),
-         url('fonts/OpenSans-Italic.woff') format('woff'),
-         url('fonts/OpenSans-Italic.ttf') format('truetype'),
-         url('fonts/OpenSans-Italic.eot') format('embedded-opentype');
+    url('fonts/OpenSans-Italic.woff') format('woff'),
+    url('fonts/OpenSans-Italic.ttf') format('truetype'),
+    url('fonts/OpenSans-Italic.eot') format('embedded-opentype');
 }
 
 @font-face {
@@ -23,9 +23,9 @@
     font-style: normal;
     font-weight: 600;
     src: url('fonts/OpenSans-SemiBold.woff2') format('woff2'),
-         url('fonts/OpenSans-SemiBold.woff') format('woff'),
-         url('fonts/OpenSans-SemiBold.ttf') format('truetype'),
-         url('fonts/OpenSans-SemiBold.eot') format('embedded-opentype');
+    url('fonts/OpenSans-SemiBold.woff') format('woff'),
+    url('fonts/OpenSans-SemiBold.ttf') format('truetype'),
+    url('fonts/OpenSans-SemiBold.eot') format('embedded-opentype');
 }
 
 @font-face {
@@ -33,9 +33,9 @@
     font-style: italic;
     font-weight: 600;
     src: url('fonts/OpenSans-SemiBoldItalic.woff2') format('woff2'),
-         url('fonts/OpenSans-SemiBoldItalic.woff') format('woff'),
-         url('fonts/OpenSans-SemiBoldItalic.ttf') format('truetype'),
-         url('fonts/OpenSans-SemiBoldItalic.eot') format('embedded-opentype');
+    url('fonts/OpenSans-SemiBoldItalic.woff') format('woff'),
+    url('fonts/OpenSans-SemiBoldItalic.ttf') format('truetype'),
+    url('fonts/OpenSans-SemiBoldItalic.eot') format('embedded-opentype');
 }
 
 @media (prefers-color-scheme: dark) {
