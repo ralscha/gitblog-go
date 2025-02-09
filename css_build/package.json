@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "prebuild": "shx mkdir -p build && shx rm -rf dist/* && shx cp src/favicon.ico build && node src/prepare_prism.js",
-    "build": "npx cleancss -o build/blog-7.css node_modules/normalize.css/normalize.css node_modules/github-markdown-css/github-markdown.css prism-dark-light.css src/blog.css",
+    "build": "npx cleancss -o build/blog-8.css node_modules/normalize.css/normalize.css node_modules/github-markdown-css/github-markdown.css prism-dark-light.css src/blog.css",
     "postbuild": "bread-compressor build"
   },
   "dependencies": {
-    "github-markdown-css": "5.7.0",
+    "github-markdown-css": "5.8.1",
     "normalize.css": "8.0.1",
     "prismjs": "1.29.0"
   },

@@ -1,53 +1,41 @@
 @font-face {
-    font-family: 'Source Sans Pro';
+    font-family: 'Open Sans';
     font-style: normal;
     font-weight: 400;
-    src: local('Source Sans Pro'),
-    local('SourceSansPro-Regular'),
-    url('fonts/Source_Sans_Pro_400.eot?#iefix') format('embedded-opentype'),
-    url('fonts/Source_Sans_Pro_400.woff') format('woff'),
-    url('fonts/Source_Sans_Pro_400.woff2') format('woff2'),
-    url('fonts/Source_Sans_Pro_400.svg#SourceSansPro') format('svg'),
-    url('fonts/Source_Sans_Pro_400.ttf') format('truetype');
+    src: url('fonts/OpenSans-Regular.woff2') format('woff2'),
+         url('fonts/OpenSans-Regular.woff') format('woff'),
+         url('fonts/OpenSans-Regular.ttf') format('truetype'),
+         url('fonts/OpenSans-Regular.eot') format('embedded-opentype');
 }
 
 @font-face {
-    font-family: 'Source Sans Pro';
-    font-style: normal;
-    font-weight: 600;
-    src: local('Source Sans Pro Semibold'),
-    local('SourceSansPro-Semibold'),
-    url('fonts/Source_Sans_Pro_600.eot?#iefix') format('embedded-opentype'),
-    url('fonts/Source_Sans_Pro_600.woff') format('woff'),
-    url('fonts/Source_Sans_Pro_600.woff2') format('woff2'),
-    url('fonts/Source_Sans_Pro_600.svg#SourceSansPro') format('svg'),
-    url('fonts/Source_Sans_Pro_600.ttf') format('truetype');
-}
-
-@font-face {
-    font-family: 'Source Serif Pro';
-    font-style: normal;
+    font-family: 'Open Sans';
+    font-style: italic;
     font-weight: 400;
-    src: local('Source Serif Pro'),
-    local('SourceSerifPro-Regular'),
-    url('fonts/Source_Serif_Pro_400.eot?#iefix') format('embedded-opentype'),
-    url('fonts/Source_Serif_Pro_400.woff') format('woff'),
-    url('fonts/Source_Serif_Pro_400.woff2') format('woff2'),
-    url('fonts/Source_Serif_Pro_400.svg#SourceSerifPro') format('svg'),
-    url('fonts/Source_Serif_Pro_400.ttf') format('truetype');
+    src: url('fonts/OpenSans-Italic.woff2') format('woff2'),
+         url('fonts/OpenSans-Italic.woff') format('woff'),
+         url('fonts/OpenSans-Italic.ttf') format('truetype'),
+         url('fonts/OpenSans-Italic.eot') format('embedded-opentype');
 }
 
 @font-face {
-    font-family: 'Source Serif Pro';
+    font-family: 'Open Sans';
     font-style: normal;
     font-weight: 600;
-    src: local('Source Serif Pro Semibold'),
-    local('SourceSerifPro-Semibold'),
-    url('fonts/Source_Serif_Pro_600.eot?#iefix') format('embedded-opentype'),
-    url('fonts/Source_Serif_Pro_600.woff') format('woff'),
-    url('fonts/Source_Serif_Pro_600.woff2') format('woff2'),
-    url('fonts/Source_Serif_Pro_600.svg#SourceSerifPro') format('svg'),
-    url('fonts/Source_Serif_Pro_600.ttf') format('truetype');
+    src: url('fonts/OpenSans-SemiBold.woff2') format('woff2'),
+         url('fonts/OpenSans-SemiBold.woff') format('woff'),
+         url('fonts/OpenSans-SemiBold.ttf') format('truetype'),
+         url('fonts/OpenSans-SemiBold.eot') format('embedded-opentype');
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-style: italic;
+    font-weight: 600;
+    src: url('fonts/OpenSans-SemiBoldItalic.woff2') format('woff2'),
+         url('fonts/OpenSans-SemiBoldItalic.woff') format('woff'),
+         url('fonts/OpenSans-SemiBoldItalic.ttf') format('truetype'),
+         url('fonts/OpenSans-SemiBoldItalic.eot') format('embedded-opentype');
 }
 
 @media (prefers-color-scheme: dark) {
@@ -82,6 +70,7 @@
 
 body {
     background-color: var(--background-color);
+    font-family: "Open Sans", sans-serif;
 }
 
 header, .indexarticle {
@@ -89,7 +78,7 @@ header, .indexarticle {
     min-width: 200px;
     max-width: 990px;
     margin: 3vh auto 3vh auto;
-    font-family: "Source Serif Pro", Georgia, serif;
+    font-family: "Open Sans", sans-serif;
     font-weight: normal;
     -ms-text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
@@ -218,7 +207,7 @@ footer {
     padding: 0 10px;
     margin: 30px auto 50px auto;
     color: var(--paragraph-text);
-    font-family: "Source Serif Pro", Georgia, serif;
+    font-family: "Open Sans", sans-serif;
     font-weight: normal;
     -ms-text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
@@ -230,14 +219,14 @@ form div {
     max-width: 990px;
     margin: 0 auto;
     padding: 0 10px;
-    font-family: "Source Serif Pro", Georgia, serif;
+    font-family: "Open Sans", sans-serif;
     font-weight: normal;
     -ms-text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
 }
 
 form input, form textarea {
-    font-family: "Source Serif Pro", Georgia, serif;
+    font-family: "Open Sans", sans-serif;
     font-weight: normal;
     -ms-text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
@@ -271,7 +260,7 @@ p > small.gh {
 }
 
 .markdown-body, .markdown-body .x-form-display-field {
-    font-family: "Source Serif Pro", Georgia, serif;
+    font-family: "Open Sans", sans-serif;
     font-size: 19px;
 }
 
