@@ -21,7 +21,11 @@
 		  <input type="search" name="query"{{ if .Query }} value="{{ .Query }}"{{ end }}><input type="submit" value="Search">
 		</form>
 
-		{{ range  $i, $y := .Years }}{{ if $i }}&nbsp;|&nbsp;{{ end }}{{ if $y.Current }}<strong>{{ $y.Year }}</strong>{{ else }}<a href="/index.html?year={{ $y.Year }}">{{ $y.Year }}</a>{{ end }}{{ end }}
+		<select id="yearSelect" onchange="window.location.href='/index.html?year=' + this.value">
+			{{ range $i, $y := .Years }}
+			<option value="{{ $y.Year }}"{{ if $y.Current }} selected{{ end }}>{{ $y.Year }}</option>
+			{{ end }}
+		</select>
 	</div>
 
   </header>
