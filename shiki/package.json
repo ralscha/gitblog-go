@@ -1,0 +1,10 @@
+{
+  "name": "shiki-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cli.js",
+  "type": "module",
+  "dependencies": {
+    "shiki": "2.3.2"
+  }
+}
