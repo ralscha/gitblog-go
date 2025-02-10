@@ -1,0 +1,16 @@
+127.0.0.1 {
+  root * posts
+  file_server {
+    precompressed br gzip
+    hide .git *.md
+  }
+
+  @proxypaths {
+    path /
+    path /index.html
+    path /submitFeedback
+    path /feedback/*
+    path /githubCallback
+  }
+  reverse_proxy @proxypaths localhost:8080
+}

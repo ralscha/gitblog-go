@@ -210,7 +210,79 @@ func (app *application) shiki(htmlContent string) (string, error) {
 		return "", err
 	}
 
+	cleaned, err := cleanupShikiOutput(buf.String())
+	if err != nil {
+		return "", fmt.Errorf("failed to cleanup shiki output: %w", err)
+	}
+
+	return cleaned, nil
+}
+
+func cleanupShikiOutput(htmlContent string) (string, error) {
+	doc, err := html.Parse(strings.NewReader(htmlContent))
+	if err != nil {
+		return "", err
+	}
+
+	var extract func(*html.Node) *html.Node
+	extract = func(n *html.Node) *html.Node {
+		if n.Type == html.ElementNode {
+			if n.Data == "pre" {
+				// Check if this pre contains a code that contains a shiki pre
+				if code := findFirstChild(n, "code"); code != nil {
+					if shikiPre := findFirstChild(code, "pre"); shikiPre != nil {
+						if hasShikiClass(shikiPre) {
+							return shikiPre
+						}
+					}
+				}
+			}
+		}
+		return nil
+	}
+
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "pre" {
+			if replacement := extract(n); replacement != nil {
+				// Replace the current node's attributes and children with the shiki pre
+				n.Attr = replacement.Attr
+				n.FirstChild = replacement.FirstChild
+				n.LastChild = replacement.LastChild
+			}
+		}
+
+		// Continue traversing
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+		}
+	}
+	f(doc)
+
+	var buf bytes.Buffer
+	if err := html.Render(&buf, doc); err != nil {
+		return "", err
+	}
+
 	return buf.String(), nil
+}
+
+func findFirstChild(n *html.Node, tag string) *html.Node {
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if c.Type == html.ElementNode && c.Data == tag {
+			return c
+		}
+	}
+	return nil
+}
+
+func hasShikiClass(n *html.Node) bool {
+	for _, attr := range n.Attr {
+		if attr.Key == "class" && strings.Contains(attr.Val, "shiki") {
+			return true
+		}
+	}
+	return false
 }
 
 func (app *application) runShiki(language, code string) (string, error) {
