@@ -30,7 +30,7 @@ type Config struct {
 		Author      string
 		Description string
 		Url         string
-		Prismjs     string
+		Shikicli    string
 		Secret      string
 	}
 	Meilisearch struct {

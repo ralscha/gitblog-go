@@ -1,9 +1,0 @@
-{
-  "name": "prismjs-cli",
-  "version": "1.0.0",
-  "description": "",
-  "main": "cli.js",
-  "dependencies": {
-    "prismjs": "1.29.0"
-  }
-}

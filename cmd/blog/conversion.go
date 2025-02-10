@@ -56,9 +56,9 @@ func (app *application) convert(markdownFile string) error {
 		return fmt.Errorf("failed to add target blank to links: %w", err)
 	}
 
-	htmlContent, err = app.prism(htmlContent)
+	htmlContent, err = app.shiki(htmlContent)
 	if err != nil {
-		return fmt.Errorf("failed to prism: %w", err)
+		return fmt.Errorf("failed to shiki: %w", err)
 	}
 
 	htmlContent = strings.TrimPrefix(htmlContent, "<html><head></head><body>")
@@ -154,7 +154,7 @@ func addTargetBlankToLinks(htmlStr string) (string, error) {
 	return b.String(), nil
 }
 
-func (app *application) prism(htmlContent string) (string, error) {
+func (app *application) shiki(htmlContent string) (string, error) {
 	doc, err := html.Parse(strings.NewReader(htmlContent))
 	if err != nil {
 		return "", err
@@ -174,7 +174,7 @@ func (app *application) prism(htmlContent string) (string, error) {
 						}
 					}
 
-					code, err := app.runPrism(lang, html.UnescapeString(n.FirstChild.Data))
+					code, err := app.runShiki(lang, html.UnescapeString(n.FirstChild.Data))
 					if err != nil {
 						return err
 					}
@@ -213,7 +213,7 @@ func (app *application) prism(htmlContent string) (string, error) {
 	return buf.String(), nil
 }
 
-func (app *application) runPrism(language, code string) (string, error) {
+func (app *application) runShiki(language, code string) (string, error) {
 	codeTmp, err := os.CreateTemp("", "code")
 	if err != nil {
 		return "", fmt.Errorf("failed to create tmp file: %w", err)
@@ -229,10 +229,10 @@ func (app *application) runPrism(language, code string) (string, error) {
 	}
 	defer os.Remove(outTmp.Name())
 
-	cmd := exec.Command("node", app.config.Blog.Prismjs, codeTmp.Name(), outTmp.Name(), language)
+	cmd := exec.Command("node", app.config.Blog.Shikicli, codeTmp.Name(), outTmp.Name(), language)
 	_, err = cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("failed to run prismjs cli: %w", err)
+		return "", fmt.Errorf("failed to run shiki cli: %w", err)
 	}
 
 	content, err := os.ReadFile(outTmp.Name())
