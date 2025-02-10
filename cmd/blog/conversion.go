@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-
 	"gitblog/assets"
 	"golang.org/x/net/html"
 	"gopkg.in/yaml.v3"
@@ -304,7 +303,8 @@ func (app *application) runShiki(language, code string) (string, error) {
 	cmd := exec.Command("node", app.config.Blog.Shikicli, codeTmp.Name(), outTmp.Name(), language)
 	_, err = cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("failed to run shiki cli: %w", err)
+		fmt.Println("failed to run shiki", err)
+		return fmt.Sprintf(`<pre class="shiki"><code>%s</code></pre>`, html.EscapeString(code)), nil
 	}
 
 	content, err := os.ReadFile(outTmp.Name())
