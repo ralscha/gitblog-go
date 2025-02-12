@@ -535,6 +535,10 @@ header > h1 {
     color: var(--text-color-1);
 }
 
+.markdown-body pre code {
+    font-size: 93%
+}
+
 pre.shiki > code {
     font-family: var(--fontStack-monospace), monospace;
     font-feature-settings: "liga" 0, "calt" 0;
