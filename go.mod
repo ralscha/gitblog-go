@@ -10,12 +10,12 @@ require (
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/feeds v1.2.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
-	github.com/meilisearch/meilisearch-go v0.30.0
+	github.com/meilisearch/meilisearch-go v0.31.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/sabloger/sitemap-generator v1.3.0
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.19.0
-	github.com/wneessen/go-mail v0.6.1
+	github.com/wneessen/go-mail v0.6.2
 	github.com/yuin/goldmark v1.7.8
 	github.com/yuin/goldmark-emoji v1.0.4
 	go.abhg.dev/goldmark/anchor v0.1.1
@@ -58,8 +58,8 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.33.0 // indirect
-	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
+	golang.org/x/crypto v0.34.0 // indirect
+	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
