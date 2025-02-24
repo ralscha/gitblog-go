@@ -16,7 +16,20 @@ import (
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-	err := run(logger)
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "index":
+			err := runIndex(logger)
+			if err != nil {
+				trace := string(debug.Stack())
+				logger.Error(err.Error(), "trace", trace)
+				os.Exit(1)
+			}
+			return
+		}
+	}
+
+	err := runServer(logger)
 	if err != nil {
 		trace := string(debug.Stack())
 		logger.Error(err.Error(), "trace", trace)
@@ -37,7 +50,7 @@ type application struct {
 	templates         map[string]*template.Template
 }
 
-func run(logger *slog.Logger) error {
+func runServer(logger *slog.Logger) error {
 	cfg, err := LoadConfig()
 	if err != nil {
 		log.Fatalf("reading config failed %v\n", err)
@@ -94,4 +107,53 @@ func run(logger *slog.Logger) error {
 	}
 
 	return app.serveHTTP()
+}
+
+func runIndex(logger *slog.Logger) error {
+	cfg, err := LoadConfig()
+	if err != nil {
+		log.Fatalf("reading config failed %v\n", err)
+	}
+
+	searchService, err := NewSearchService(cfg)
+	if err != nil {
+		return err
+	}
+
+	app := &application{
+		config:        cfg,
+		logger:        logger,
+		searchService: searchService,
+	}
+
+	err = app.indexAllPosts()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (app *application) indexAllPosts() error {
+	app.logger.Info("deleting all documents from search index")
+	err := app.searchService.DeleteAll()
+	if err != nil {
+		return err
+	}
+
+	app.logger.Info("reading all posts metadata from files")
+	postMetadatas, err := app.readAllMetadata()
+	if err != nil {
+		return err
+	}
+
+	app.logger.Info("indexing posts in search index", slog.Group("posts", "count", len(postMetadatas)))
+	err = app.searchService.IndexPosts(postMetadatas)
+	if err != nil {
+		return err
+	}
+
+	app.logger.Info("successfully indexed all posts")
+
+	return nil
 }
