@@ -12,7 +12,7 @@
     "normalize.css": "8.0.1"
   },
   "devDependencies": {
-    "bread-compressor-cli": "3.1.0",
+    "bread-compressor-cli": "3.1.2",
     "clean-css-cli": "5.6.3",
     "shx": "0.3.4"
   }
