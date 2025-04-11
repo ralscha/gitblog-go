@@ -72,7 +72,30 @@ func (app *application) checkBrokenLinks() {
 					continue
 				}
 
-				resp, err := httpClient.Get(cleanedUpLink)
+				req, err := http.NewRequest("GET", cleanedUpLink, nil)
+				if err != nil {
+					app.logger.Error(err.Error())
+					continue
+				}
+
+				req.Header.Set("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+				req.Header.Set("accept-encoding", "gzip, deflate, br, zstd")
+				req.Header.Set("accept-language", "en-US,en;q=0.9,de;q=0.8,th;q=0.7,hu;q=0.6")
+				req.Header.Set("cache-control", "max-age=0")
+				req.Header.Set("if-modified-since", "Wed, 02 Apr 2025 00:16:58 GMT")
+				req.Header.Set("if-none-match", `"d8vpyn1y38q111zf"`)
+				req.Header.Set("priority", "u=0, i")
+				req.Header.Set("sec-ch-ua", `"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"`)
+				req.Header.Set("sec-ch-ua-mobile", "?0")
+				req.Header.Set("sec-ch-ua-platform", `"Windows"`)
+				req.Header.Set("sec-fetch-dest", "document")
+				req.Header.Set("sec-fetch-mode", "navigate")
+				req.Header.Set("sec-fetch-site", "none")
+				req.Header.Set("sec-fetch-user", "?1")
+				req.Header.Set("upgrade-insecure-requests", "1")
+				req.Header.Set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36")
+
+				resp, err := httpClient.Do(req)
 				if err != nil {
 					app.logger.Error(err.Error())
 					continue
