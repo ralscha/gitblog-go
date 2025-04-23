@@ -6,7 +6,7 @@ require (
 	codnect.io/chrono v1.1.3
 	github.com/andybalholm/brotli v1.1.1
 	github.com/go-chi/chi/v5 v5.2.1
-	github.com/go-git/go-git/v5 v5.15.0
+	github.com/go-git/go-git/v5 v5.16.0
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/feeds v1.2.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
@@ -16,8 +16,8 @@ require (
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.20.1
 	github.com/wneessen/go-mail v0.6.2
-	github.com/yuin/goldmark v1.7.8
-	github.com/yuin/goldmark-emoji v1.0.5
+	github.com/yuin/goldmark v1.7.10
+	github.com/yuin/goldmark-emoji v1.0.6
 	go.abhg.dev/goldmark/anchor v0.2.0
 	go.abhg.dev/goldmark/mermaid v0.5.0
 	golang.org/x/net v0.39.0
