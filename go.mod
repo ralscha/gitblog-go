@@ -16,7 +16,7 @@ require (
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.20.1
 	github.com/wneessen/go-mail v0.6.2
-	github.com/yuin/goldmark v1.7.12
+	github.com/yuin/goldmark v1.7.13
 	github.com/yuin/goldmark-emoji v1.0.6
 	go.abhg.dev/goldmark/anchor v0.2.0
 	go.abhg.dev/goldmark/mermaid v0.5.0
