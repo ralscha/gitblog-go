@@ -101,7 +101,7 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) error {
 			"body":          post.Markdown,
 			"summary":       post.Summary,
 			"title":         post.Title,
-			"url":           post.Url,
+			"url":           post.URL,
 			"publishedTs":   publishedTime.Unix(),
 			"updatedTs":     updatedSeconds,
 			"publishedYear": publishedYear,
@@ -176,10 +176,10 @@ func (s *SearchService) mapToPostMetadata(response *meilisearch.SearchResponse) 
 
 		published := ""
 		updated := ""
-		var publishedTs time.Time
+		var publishedTS time.Time
 		if hitMap["publishedTs"] != nil {
-			publishedTs = time.Unix(int64(hitMap["publishedTs"].(float64)), 0)
-			published = publishedTs.Format("2. January 2006")
+			publishedTS = time.Unix(int64(hitMap["publishedTs"].(float64)), 0)
+			published = publishedTS.Format("2. January 2006")
 		}
 		if hitMap["updatedTs"] != nil && hitMap["updatedTs"].(float64) != 0 {
 			updatedTime := time.Unix(int64(hitMap["updatedTs"].(float64)), 0)
@@ -197,9 +197,9 @@ func (s *SearchService) mapToPostMetadata(response *meilisearch.SearchResponse) 
 		posts = append(posts, PostMetadata{
 			Title:       hitMap["title"].(string),
 			Summary:     hitMap["summary"].(string),
-			Url:         hitMap["url"].(string),
+			URL:         hitMap["url"].(string),
 			Published:   published,
-			PublishedTs: publishedTs,
+			PublishedTS: publishedTS,
 			Updated:     updated,
 			Tags:        tags,
 		})

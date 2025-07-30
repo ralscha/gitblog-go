@@ -56,8 +56,8 @@ func (app *application) checkBrokenLinks() {
 		for _, link := range links {
 			ignore := false
 			linkLower := strings.ToLower(link)
-			for _, ignoreUrl := range ignoreUrls {
-				if strings.HasPrefix(linkLower, ignoreUrl) {
+			for _, ignoreURL := range ignoreUrls {
+				if strings.HasPrefix(linkLower, ignoreURL) {
 					ignore = true
 					break
 				}
@@ -113,16 +113,16 @@ func (app *application) checkBrokenLinks() {
 				if resp.StatusCode >= 300 && resp.StatusCode <= 399 {
 					location := resp.Header.Get("Location")
 					urlCheck := URLCheck{
-						Url:      link,
-						Post:     post.Url,
+						URL:      link,
+						Post:     post.URL,
 						Status:   resp.StatusCode,
 						Location: location,
 					}
 					urlChecks = append(urlChecks, urlCheck)
 				} else {
 					urlCheck := URLCheck{
-						Url:    link,
-						Post:   post.Url,
+						URL:    link,
+						Post:   post.URL,
 						Status: resp.StatusCode,
 					}
 					urlChecks = append(urlChecks, urlCheck)
@@ -134,13 +134,13 @@ func (app *application) checkBrokenLinks() {
 	if len(urlChecks) > 0 {
 		fmt.Println("Broken links found:")
 		for _, urlCheck := range urlChecks {
-			fmt.Printf("  %s: %d\n", urlCheck.Url, urlCheck.Status)
+			fmt.Printf("  %s: %d\n", urlCheck.URL, urlCheck.Status)
 		}
 	} else {
 		fmt.Println("No broken links found.")
 	}
 
-	tmpl, err := template.ParseFS(assets.EmbeddedHtml, "html/urlcheck.tmpl")
+	tmpl, err := template.ParseFS(assets.EmbeddedHTML, "html/urlcheck.tmpl")
 	if err != nil {
 		app.logger.Error(err.Error())
 		return

@@ -90,12 +90,12 @@ func (app *application) readAllMetadata() ([]PostMetadata, error) {
 		}
 
 		url = filepath.ToSlash(url)
-		feedbackUrl := strings.Replace(url, "/", "-", -1)
+		feedbackURL := strings.ReplaceAll(url, "/", "-")
 
 		postMetadata := PostMetadata{
 			Title:        header.Title,
-			Url:          url,
-			FeedbackUrl:  feedbackUrl,
+			URL:          url,
+			FeedbackURL:  feedbackURL,
 			Published:    header.Published,
 			Updated:      header.Updated,
 			Summary:      header.Summary,
@@ -120,7 +120,7 @@ func (app *application) cleanup() (bool, error) {
 			return fmt.Errorf("error walking directory: %w", err)
 		}
 
-		if !info.IsDir() && isHtmlFile(path) {
+		if !info.IsDir() && isHTMLFile(path) {
 			htmlFiles = append(htmlFiles, path)
 		}
 

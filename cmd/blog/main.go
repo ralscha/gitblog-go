@@ -45,7 +45,7 @@ type application struct {
 	gitHubCodeService *GitHubCodeService
 	markdownService   *MarkdownService
 	searchService     *SearchService
-	hashId            *hashids.HashID
+	hashID            *hashids.HashID
 	wg                sync.WaitGroup
 	templates         map[string]*template.Template
 }
@@ -56,11 +56,11 @@ func runServer(logger *slog.Logger) error {
 		log.Fatalf("reading config failed %v\n", err)
 	}
 
-	mailer, err := NewMailer(cfg.Smtp.Host,
-		cfg.Smtp.Port,
-		cfg.Smtp.Username,
-		cfg.Smtp.Password,
-		cfg.Smtp.Sender)
+	mailer, err := NewMailer(cfg.SMTP.Host,
+		cfg.SMTP.Port,
+		cfg.SMTP.Username,
+		cfg.SMTP.Password,
+		cfg.SMTP.Sender)
 	if err != nil {
 		return err
 	}
@@ -78,9 +78,9 @@ func runServer(logger *slog.Logger) error {
 	}
 
 	templates := make(map[string]*template.Template)
-	templates["feedback"] = template.Must(template.ParseFS(assets.EmbeddedHtml, "html/feedback.tmpl"))
-	templates["feedback_ok"] = template.Must(template.ParseFS(assets.EmbeddedHtml, "html/feedback_ok.tmpl"))
-	templates["index"] = template.Must(template.ParseFS(assets.EmbeddedHtml, "html/index.tmpl"))
+	templates["feedback"] = template.Must(template.ParseFS(assets.EmbeddedHTML, "html/feedback.tmpl"))
+	templates["feedback_ok"] = template.Must(template.ParseFS(assets.EmbeddedHTML, "html/feedback_ok.tmpl"))
+	templates["index"] = template.Must(template.ParseFS(assets.EmbeddedHTML, "html/index.tmpl"))
 
 	app := &application{
 		config:            cfg,
@@ -89,7 +89,7 @@ func runServer(logger *slog.Logger) error {
 		gitHubCodeService: NewGitHubCodeService(),
 		markdownService:   NewMarkdownService(),
 		searchService:     searchService,
-		hashId:            hi,
+		hashID:            hi,
 		taskScheduler:     chrono.NewDefaultTaskScheduler(),
 		templates:         templates,
 	}

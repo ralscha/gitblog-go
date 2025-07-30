@@ -40,11 +40,11 @@ func (app *application) writeFeeds(postMetadata []PostMetadata) error {
 
 		feedItems[i] = &feeds.Item{
 			Title:       post.Title,
-			Link:        &feeds.Link{Href: app.config.Blog.Url + post.Url},
-			Source:      &feeds.Link{Href: app.config.Blog.Url + post.Url},
+			Link:        &feeds.Link{Href: app.config.Blog.URL + post.URL},
+			Source:      &feeds.Link{Href: app.config.Blog.URL + post.URL},
 			Author:      &feeds.Author{Name: app.config.Blog.Author},
 			Description: description,
-			Id:          app.config.Blog.Url + post.Url,
+			Id:          app.config.Blog.URL + post.URL,
 			Updated:     updated,
 			Created:     published,
 		}
@@ -52,7 +52,7 @@ func (app *application) writeFeeds(postMetadata []PostMetadata) error {
 
 	feed := &feeds.Feed{
 		Title:       app.config.Blog.Title,
-		Link:        &feeds.Link{Href: app.config.Blog.Url},
+		Link:        &feeds.Link{Href: app.config.Blog.URL},
 		Description: app.config.Blog.Description,
 		Author:      &feeds.Author{Name: app.config.Blog.Author},
 		Created:     lastUpdated,
@@ -126,7 +126,7 @@ func (app *application) writeSitemap(postMetadata []PostMetadata) error {
 
 	sm := smg.NewSitemap(true)
 	sm.SetName("sitemap")
-	sm.SetHostname(app.config.Blog.Url)
+	sm.SetHostname(app.config.Blog.URL)
 	sm.SetOutputPath(app.config.Blog.PostDir)
 	sm.SetLastMod(&lastUpdated)
 	sm.SetCompress(false)
@@ -142,7 +142,7 @@ func (app *application) writeSitemap(postMetadata []PostMetadata) error {
 		}
 
 		err := sm.Add(&smg.SitemapLoc{
-			Loc:        post.Url,
+			Loc:        post.URL,
 			LastMod:    &updated,
 			ChangeFreq: smg.Yearly,
 			Priority:   0.7,

@@ -46,7 +46,7 @@ func (app *application) submitFeedbackHandler(w http.ResponseWriter, r *http.Req
 	name := r.FormValue("name")
 
 	if feedback != "" && url != "" && token != "" && name == "" {
-		numbers, err := app.hashId.DecodeWithError(token)
+		numbers, err := app.hashID.DecodeWithError(token)
 		if err != nil {
 			app.reportServerError(r, err)
 			return
@@ -74,17 +74,17 @@ func (app *application) feedbackHandler(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	url := chi.URLParam(r, "url")
-	token, err := app.hashId.Encode([]int{int(time.Now().Unix())})
+	token, err := app.hashID.Encode([]int{int(time.Now().Unix())})
 	if err != nil {
 		app.reportServerError(r, err)
 		return
 	}
 
 	err = app.templates["feedback"].Execute(w, struct {
-		PostUrl string
+		PostURL string
 		Token   string
 	}{
-		PostUrl: url,
+		PostURL: url,
 		Token:   token,
 	})
 	if err != nil {
@@ -182,7 +182,7 @@ func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		slices.SortFunc(posts, func(a, b PostMetadata) int {
-			return int(b.PublishedTs.Unix() - a.PublishedTs.Unix())
+			return int(b.PublishedTS.Unix() - a.PublishedTS.Unix())
 		})
 
 		yearNavigation := make([]YearNavigation, len(publishedYears))

@@ -48,7 +48,7 @@ func (gcs *GitHubCodeService) InsertCode(markdown string) (string, error) {
 	for _, match := range matches {
 		sb.WriteString(markdown[lastIndex:match[0]])
 
-		completeUrl := markdown[match[2]:match[3]]
+		completeURL := markdown[match[2]:match[3]]
 		url := markdown[match[4]:match[5]]
 
 		var from, to int
@@ -94,7 +94,7 @@ func (gcs *GitHubCodeService) InsertCode(markdown string) (string, error) {
 			} else {
 				replacementCode = code
 			}
-			replacementCode = strings.Replace(replacementCode, "\t", "  ", -1)
+			replacementCode = strings.ReplaceAll(replacementCode, "\t", "  ")
 
 			fileName := url
 			lastSlash := strings.LastIndex(url, "/")
@@ -103,7 +103,7 @@ func (gcs *GitHubCodeService) InsertCode(markdown string) (string, error) {
 			}
 
 			replacement := fmt.Sprintf("\n```%s\n%s\n```\n<small class=\"gh\">[%s](%s%s)</small>\n",
-				language, replacementCode, fileName, gitHubLink, completeUrl)
+				language, replacementCode, fileName, gitHubLink, completeURL)
 
 			sb.WriteString(replacement)
 		}
@@ -132,7 +132,11 @@ func (gcs *GitHubCodeService) fetchCode(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Printf("failed to close response body: %v\n", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("failed to fetch code, status code: %d", resp.StatusCode)

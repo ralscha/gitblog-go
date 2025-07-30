@@ -9,7 +9,7 @@ import (
 const defaultTimeout = 10 * time.Second
 
 type Mailer struct {
-	client mail.Client
+	client *mail.Client
 	from   string
 }
 
@@ -19,10 +19,9 @@ func NewMailer(host string, port int, username, password, from string) (*Mailer,
 		return nil, err
 	}
 
-	mailer := &Mailer{
-		client: *client,
-		from:   from,
-	}
+	mailer := &Mailer{}
+	mailer.client = client
+	mailer.from = from
 
 	return mailer, nil
 }

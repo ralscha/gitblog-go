@@ -31,7 +31,7 @@
   </header>
 {{ range .Posts }}
   <article class="indexarticle">
-    <h3><a href="/{{ .Url }}">{{ .Title }}</a></h3>
+    <h3><a href="/{{ .URL }}">{{ .Title }}</a></h3>
     <p>Published: {{ .Published}}{{ if .Updated }}&nbsp;&nbsp;•&nbsp;&nbsp;Updated: {{ .Updated }}{{ end }}&nbsp;&nbsp;•&nbsp;&nbsp;{{ range  $i, $e := .Tags }}{{ if $i }}, {{ end }}<a href="/index.html?tag={{ $e }}">{{ $e }}</a>{{ end }}</p>
     {{ if .Summary }}<p class="summary">{{ .Summary }}</p>{{ end }}
   </article>

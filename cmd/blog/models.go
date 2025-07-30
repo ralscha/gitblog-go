@@ -4,16 +4,16 @@ import "time"
 
 type Post struct {
 	Title       string
-	Html        string
+	HTML        string
 	Published   string
 	Updated     string
-	FeedbackUrl string
-	Url         string
+	FeedbackURL string
+	URL         string
 	Tags        []string
 }
 
 type URLCheck struct {
-	Url      string
+	URL      string
 	Post     string
 	Status   int
 	Location string
@@ -26,14 +26,14 @@ type YearNavigation struct {
 
 type PostMetadata struct {
 	Draft        bool
-	Url          string
+	URL          string
 	Markdown     string
 	MarkdownFile string
-	FeedbackUrl  string
+	FeedbackURL  string
 	Title        string
 	Tags         []string
 	Published    string
-	PublishedTs  time.Time
+	PublishedTS  time.Time
 	Updated      string
 	Summary      string
 }

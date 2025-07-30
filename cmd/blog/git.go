@@ -26,7 +26,7 @@ func (app *application) pullPosts() error {
 
 	if newDir {
 		_, err := git.PlainClone(postsDir, false, &git.CloneOptions{
-			URL:      app.config.Github.Url,
+			URL:      app.config.Github.URL,
 			Progress: os.Stdout,
 			Auth:     auth,
 		})

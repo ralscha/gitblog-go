@@ -21,17 +21,29 @@ func compressFileWithBrotli(filePath string) error {
 	if err != nil {
 		return fmt.Errorf("error opening source file: %w", err)
 	}
-	defer sourceFile.Close()
+	defer func() {
+		if err := sourceFile.Close(); err != nil {
+			fmt.Printf("failed to close source file: %v\n", err)
+		}
+	}()
 
 	destFilePath := filePath + ".br"
 	destFile, err := os.Create(destFilePath)
 	if err != nil {
 		return fmt.Errorf("error creating destination file: %w", err)
 	}
-	defer destFile.Close()
+	defer func() {
+		if err := destFile.Close(); err != nil {
+			fmt.Printf("failed to close destination file: %v\n", err)
+		}
+	}()
 
 	brotliWriter := brotli.NewWriter(destFile)
-	defer brotliWriter.Close()
+	defer func() {
+		if err := brotliWriter.Close(); err != nil {
+			fmt.Printf("failed to close brotli writer: %v\n", err)
+		}
+	}()
 
 	if _, err := io.Copy(brotliWriter, sourceFile); err != nil {
 		return fmt.Errorf("error compressing file with Brotli: %w", err)
@@ -70,7 +82,7 @@ func isMarkdownFile(path string) bool {
 	return filepath.Ext(path) == ".md"
 }
 
-func isHtmlFile(path string) bool {
+func isHTMLFile(path string) bool {
 	return filepath.Ext(path) == ".html"
 }
 
@@ -79,20 +91,32 @@ func compressFileWithGzip(filePath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer srcFile.Close()
+	defer func() {
+		if err := srcFile.Close(); err != nil {
+			fmt.Printf("failed to close source file: %v\n", err)
+		}
+	}()
 
 	destPath := filePath + ".gz"
 	destFile, err := os.Create(destPath)
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer destFile.Close()
+	defer func() {
+		if err := destFile.Close(); err != nil {
+			fmt.Printf("failed to close destination file: %v\n", err)
+		}
+	}()
 
 	gzWriter, err := gzip.NewWriterLevel(destFile, gzip.BestCompression)
 	if err != nil {
 		return fmt.Errorf("failed to create gzip writer: %w", err)
 	}
-	defer gzWriter.Close()
+	defer func() {
+		if err := gzWriter.Close(); err != nil {
+			fmt.Printf("failed to close gzip writer: %v\n", err)
+		}
+	}()
 
 	if _, err := io.Copy(gzWriter, srcFile); err != nil {
 		return fmt.Errorf("failed to compress and write file: %w", err)

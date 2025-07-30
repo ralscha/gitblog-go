@@ -13,12 +13,12 @@ import (
 
 func (app *application) serveHTTP() error {
 	srv := &http.Server{
-		Addr:         app.config.Http.Port,
+		Addr:         app.config.HTTP.Port,
 		Handler:      app.routes(),
 		ErrorLog:     slog.NewLogLogger(app.logger.Handler(), slog.LevelWarn),
-		IdleTimeout:  time.Duration(app.config.Http.IdleTimeoutInSeconds) * time.Second,
-		ReadTimeout:  time.Duration(app.config.Http.ReadTimeoutInSeconds) * time.Second,
-		WriteTimeout: time.Duration(app.config.Http.WriteTimeoutInSeconds) * time.Second,
+		IdleTimeout:  time.Duration(app.config.HTTP.IdleTimeoutInSeconds) * time.Second,
+		ReadTimeout:  time.Duration(app.config.HTTP.ReadTimeoutInSeconds) * time.Second,
+		WriteTimeout: time.Duration(app.config.HTTP.WriteTimeoutInSeconds) * time.Second,
 	}
 
 	shutdownErrorChan := make(chan error)
@@ -28,7 +28,7 @@ func (app *application) serveHTTP() error {
 		signal.Notify(quitChan, syscall.SIGINT, syscall.SIGTERM)
 		<-quitChan
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(app.config.Http.DefaultShutdownPeriodInSeconds)*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(app.config.HTTP.DefaultShutdownPeriodInSeconds)*time.Second)
 		defer cancel()
 
 		app.logger.Info("stopping scheduled jobs")

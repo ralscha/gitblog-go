@@ -68,7 +68,7 @@ func (app *application) convert(markdownFile string) error {
 		return fmt.Errorf("failed to get relative path: %w", err)
 	}
 	url = filepath.ToSlash(url)
-	feedbackUrl := strings.Replace(url, "/", "-", -1)
+	feedbackURL := strings.ReplaceAll(url, "/", "-")
 
 	var postPublished string
 	if header.Published != "" {
@@ -90,15 +90,15 @@ func (app *application) convert(markdownFile string) error {
 
 	post := Post{
 		Title:       header.Title,
-		Html:        htmlContent,
+		HTML:        htmlContent,
 		Published:   postPublished,
 		Updated:     postUpdated,
 		Tags:        header.Tags,
-		FeedbackUrl: feedbackUrl,
-		Url:         app.config.Blog.Url + url,
+		FeedbackURL: feedbackURL,
+		URL:         app.config.Blog.URL + url,
 	}
 
-	tmpl := template.Must(template.ParseFS(assets.EmbeddedHtml, "html/post.tmpl"))
+	tmpl := template.Must(template.ParseFS(assets.EmbeddedHTML, "html/post.tmpl"))
 
 	var output bytes.Buffer
 	err = tmpl.Execute(&output, post)
@@ -223,8 +223,7 @@ func cleanupShikiOutput(htmlContent string) (string, error) {
 		return "", err
 	}
 
-	var extract func(*html.Node) *html.Node
-	extract = func(n *html.Node) *html.Node {
+	extract := func(n *html.Node) *html.Node {
 		if n.Type == html.ElementNode {
 			if n.Data == "pre" {
 				// Check if this pre contains a code that contains a shiki pre
@@ -289,7 +288,11 @@ func (app *application) runShiki(language, code string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create tmp file: %w", err)
 	}
-	defer os.Remove(codeTmp.Name())
+	defer func() {
+		if err := os.Remove(codeTmp.Name()); err != nil {
+			fmt.Printf("failed to remove temp file %s: %v\n", codeTmp.Name(), err)
+		}
+	}()
 	if _, err := codeTmp.WriteString(code); err != nil {
 		return "", fmt.Errorf("failed to write code to tmp file: %w", err)
 	}
@@ -298,7 +301,11 @@ func (app *application) runShiki(language, code string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create output tmp file: %w", err)
 	}
-	defer os.Remove(outTmp.Name())
+	defer func() {
+		if err := os.Remove(outTmp.Name()); err != nil {
+			fmt.Printf("failed to remove temp file %s: %v\n", outTmp.Name(), err)
+		}
+	}()
 
 	cmd := exec.Command("node", app.config.Blog.Shikicli, codeTmp.Name(), outTmp.Name(), language)
 	_, err = cmd.Output()

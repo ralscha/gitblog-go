@@ -5,14 +5,14 @@ import (
 )
 
 type Config struct {
-	Http struct {
+	HTTP struct {
 		Port                           string
 		ReadTimeoutInSeconds           int64
 		WriteTimeoutInSeconds          int64
 		IdleTimeoutInSeconds           int64
 		DefaultShutdownPeriodInSeconds int64
 	}
-	Smtp struct {
+	SMTP struct {
 		Host     string
 		Port     int
 		Username string
@@ -20,7 +20,7 @@ type Config struct {
 		Sender   string
 	}
 	Github struct {
-		Url           string
+		URL           string
 		WebhookSecret string
 		PrivateKey    string
 	}
@@ -29,7 +29,7 @@ type Config struct {
 		Title       string
 		Author      string
 		Description string
-		Url         string
+		URL         string
 		Shikicli    string
 		Secret      string
 	}

@@ -26,8 +26,8 @@
 
   <form class="feedback" action="/submitFeedback" method="post">
      <div>
-	  	 <h3>Re: {{ .PostUrl }}</h3>
-	  	 <input type="hidden" name="url" value="{{ .PostUrl }}">
+	  	 <h3>Re: {{ .PostURL }}</h3>
+	  	 <input type="hidden" name="url" value="{{ .PostURL }}">
 	  	 <input type="hidden" name="token" value="{{ .Token }}">
 
 	  	 <textarea name="feedback"></textarea>
