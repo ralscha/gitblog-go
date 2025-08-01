@@ -5,6 +5,7 @@ import (
 	"gitblog/assets"
 	"golang.org/x/net/html"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,7 +38,48 @@ func (app *application) checkBrokenLinks() {
 	}
 
 	checkedUrls := make(map[string]struct{})
+	failedDomains := make(map[string]struct{})
 	var urlChecks []URLCheck
+
+	// Collect all unique URLs from posts
+	allUniqueUrls := make(map[string]struct{})
+	for _, post := range posts {
+		htmlFile := siblingPath(post.MarkdownFile, "html")
+		htmlContent, err := os.ReadFile(htmlFile)
+		if err != nil {
+			continue
+		}
+
+		links, err := collectLinks(string(htmlContent))
+		if err != nil {
+			continue
+		}
+
+		for _, link := range links {
+			ignore := false
+			linkLower := strings.ToLower(link)
+			for _, ignoreURL := range ignoreUrls {
+				if strings.HasPrefix(linkLower, ignoreURL) {
+					ignore = true
+					break
+				}
+			}
+			if ignore {
+				continue
+			}
+
+			if strings.HasPrefix(link, "http://") || strings.HasPrefix(link, "https://") {
+				cleanedUpLink := removeFragment(link)
+				allUniqueUrls[cleanedUpLink] = struct{}{}
+			}
+		}
+	}
+
+	totalUrls := len(allUniqueUrls)
+	checkedCount := 0
+	lastReportedProgress := -1
+
+	fmt.Printf("Found %d unique URLs to check\n", totalUrls)
 
 	for _, post := range posts {
 		htmlFile := siblingPath(post.MarkdownFile, "html")
@@ -72,6 +114,25 @@ func (app *application) checkBrokenLinks() {
 					continue
 				}
 
+				parsedURL, err := url.Parse(cleanedUpLink)
+				if err != nil {
+					app.logger.Error(err.Error())
+					continue
+				}
+				domain := parsedURL.Host
+
+				// Skip if this domain has already failed with "no such host"
+				if _, ok := failedDomains[domain]; ok {
+					continue
+				}
+
+				checkedCount++
+				progress := (checkedCount * 100) / totalUrls
+				if progress >= lastReportedProgress+10 {
+					fmt.Printf("Progress: %d%% (%d/%d URLs checked)\n", progress, checkedCount, totalUrls)
+					lastReportedProgress = progress
+				}
+
 				req, err := http.NewRequest("GET", cleanedUpLink, nil)
 				if err != nil {
 					app.logger.Error(err.Error())
@@ -97,7 +158,12 @@ func (app *application) checkBrokenLinks() {
 
 				resp, err := httpClient.Do(req)
 				if err != nil {
-					app.logger.Error(err.Error())
+					if strings.Contains(err.Error(), "no such host") {
+						failedDomains[domain] = struct{}{}
+						app.logger.Error(fmt.Sprintf("Domain %s marked as failed due to 'no such host' error: %s", domain, err.Error()))
+					} else {
+						app.logger.Error(err.Error())
+					}
 					continue
 				}
 				checkedUrls[cleanedUpLink] = struct{}{}
