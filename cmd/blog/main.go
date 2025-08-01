@@ -26,6 +26,14 @@ func main() {
 				os.Exit(1)
 			}
 			return
+		case "report":
+			err := runReport(logger)
+			if err != nil {
+				trace := string(debug.Stack())
+				logger.Error(err.Error(), "trace", trace)
+				os.Exit(1)
+			}
+			return
 		}
 	}
 
@@ -96,7 +104,7 @@ func runServer(logger *slog.Logger) error {
 
 	_, err = app.taskScheduler.ScheduleWithCron(func(ctx context.Context) {
 		app.checkBrokenLinks()
-	}, "0 0 3 1 * *")
+	}, "0 40 5 1 * *")
 	if err != nil {
 		return err
 	}
@@ -130,6 +138,22 @@ func runIndex(logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func runReport(logger *slog.Logger) error {
+	cfg, err := LoadConfig()
+	if err != nil {
+		log.Fatalf("reading config failed %v\n", err)
+	}
+
+	app := &application{
+		config: cfg,
+		logger: logger,
+	}
+
+	app.checkBrokenLinks()
 
 	return nil
 }
