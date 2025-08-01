@@ -96,7 +96,7 @@ func runServer(logger *slog.Logger) error {
 
 	_, err = app.taskScheduler.ScheduleWithCron(func(ctx context.Context) {
 		app.checkBrokenLinks()
-	}, "0 0 2 2 * *")
+	}, "0 0 3 1 * *")
 	if err != nil {
 		return err
 	}

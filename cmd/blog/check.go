@@ -93,7 +93,7 @@ func (app *application) checkBrokenLinks() {
 				req.Header.Set("sec-fetch-site", "none")
 				req.Header.Set("sec-fetch-user", "?1")
 				req.Header.Set("upgrade-insecure-requests", "1")
-				req.Header.Set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36")
+				req.Header.Set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
 
 				resp, err := httpClient.Do(req)
 				if err != nil {
