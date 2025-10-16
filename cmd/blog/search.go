@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/meilisearch/meilisearch-go"
+	"fmt"
 	"slices"
 	"strconv"
 	"time"
+
+	"github.com/meilisearch/meilisearch-go"
 )
 
 const (
@@ -16,12 +18,25 @@ type SearchService struct {
 	publishedYears []int
 }
 
+type Document struct {
+	ID            int      `json:"id"`
+	Body          string   `json:"body"`
+	Summary       string   `json:"summary"`
+	Title         string   `json:"title"`
+	URL           string   `json:"url"`
+	PublishedTs   int64    `json:"publishedTs"`
+	UpdatedTs     int64    `json:"updatedTs"`
+	PublishedYear int      `json:"publishedYear"`
+	Tags          []string `json:"tags"`
+}
+
 func NewSearchService(config Config) (*SearchService, error) {
 	c := meilisearch.New(config.Meilisearch.Host, meilisearch.WithAPIKey(config.Meilisearch.Key))
 
 	index := c.Index(IndexName)
 
-	task, err := index.UpdateFilterableAttributes(&[]string{"publishedYear", "tags"})
+	filterableAttrs := []any{"publishedYear", "tags"}
+	task, err := index.UpdateFilterableAttributes(&filterableAttrs)
 	if err != nil {
 		return nil, err
 	}
@@ -42,9 +57,27 @@ func NewSearchService(config Config) (*SearchService, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, doc := range response.Results {
-		publishedYear := int(doc["publishedYear"].(float64))
-		publishedYears = append(publishedYears, publishedYear)
+
+	var years []struct {
+		PublishedYear int `json:"publishedYear"`
+	}
+	err = response.Results.DecodeInto(&years)
+	if err != nil {
+		fmt.Printf("decoding published years failed: %v\n", err)
+		return nil, err
+	}
+	for _, year := range years {
+		publishedYears = append(publishedYears, year.PublishedYear)
+	}
+
+	for _, result := range response.Results {
+		var doc Document
+		err := result.DecodeInto(&doc)
+		if err != nil {
+			fmt.Printf("decoding document failed: %v\n", err)
+			continue
+		}
+		publishedYears = append(publishedYears, doc.PublishedYear)
 	}
 	publishedYears = unique(publishedYears)
 	slices.SortFunc(publishedYears, func(i, j int) int {
@@ -79,7 +112,7 @@ func (s *SearchService) DeleteAll() error {
 }
 
 func (s *SearchService) IndexPosts(posts []PostMetadata) error {
-	documents := make([]map[string]any, len(posts))
+	documents := make([]Document, len(posts))
 	for i, post := range posts {
 		publishedTime, err := time.Parse(time.RFC3339, post.Published)
 		if err != nil {
@@ -96,19 +129,20 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) error {
 			updatedSeconds = updatedTime.Unix()
 		}
 
-		documents[i] = map[string]any{
-			"id":            i,
-			"body":          post.Markdown,
-			"summary":       post.Summary,
-			"title":         post.Title,
-			"url":           post.URL,
-			"publishedTs":   publishedTime.Unix(),
-			"updatedTs":     updatedSeconds,
-			"publishedYear": publishedYear,
-			"tags":          post.Tags,
+		documents[i] = Document{
+			ID:            i,
+			Body:          post.Markdown,
+			Summary:       post.Summary,
+			Title:         post.Title,
+			URL:           post.URL,
+			PublishedTs:   publishedTime.Unix(),
+			UpdatedTs:     updatedSeconds,
+			PublishedYear: publishedYear,
+			Tags:          post.Tags,
 		}
 	}
-	_, err := s.client.Index(IndexName).AddDocuments(documents)
+
+	_, err := s.client.Index(IndexName).AddDocuments(documents, nil)
 	if err != nil {
 		return err
 	}
@@ -171,33 +205,37 @@ func (s *SearchService) Search(query string) ([]PostMetadata, error) {
 
 func (s *SearchService) mapToPostMetadata(response *meilisearch.SearchResponse) []PostMetadata {
 	var posts []PostMetadata
-	for _, hit := range response.Hits {
-		hitMap := hit.(map[string]any)
-
+	documentHits := make([]Document, 0)
+	err := response.Hits.DecodeInto(&documentHits)
+	if err != nil {
+		fmt.Printf("decoding hit failed: %v\n", err)
+		return posts
+	}
+	for _, document := range documentHits {
 		published := ""
 		updated := ""
 		var publishedTS time.Time
-		if hitMap["publishedTs"] != nil {
-			publishedTS = time.Unix(int64(hitMap["publishedTs"].(float64)), 0)
+		if document.PublishedTs != 0 {
+			publishedTS = time.Unix(document.PublishedTs, 0)
 			published = publishedTS.Format("2. January 2006")
 		}
-		if hitMap["updatedTs"] != nil && hitMap["updatedTs"].(float64) != 0 {
-			updatedTime := time.Unix(int64(hitMap["updatedTs"].(float64)), 0)
+		if document.UpdatedTs != 0 {
+			updatedTime := time.Unix(document.UpdatedTs, 0)
 			updated = updatedTime.Format("2. January 2006")
 		}
 
 		var tags []string
-		if hitMap["tags"] != nil {
-			tagsList := hitMap["tags"].([]interface{})
+		if document.Tags != nil {
+			tagsList := documentHits[0].Tags
 			for _, tag := range tagsList {
-				tags = append(tags, tag.(string))
+				tags = append(tags, tag)
 			}
 		}
 
 		posts = append(posts, PostMetadata{
-			Title:       hitMap["title"].(string),
-			Summary:     hitMap["summary"].(string),
-			URL:         hitMap["url"].(string),
+			Title:       document.Title,
+			Summary:     document.Summary,
+			URL:         document.URL,
 			Published:   published,
 			PublishedTS: publishedTS,
 			Updated:     updated,
