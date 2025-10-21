@@ -227,9 +227,7 @@ func (s *SearchService) mapToPostMetadata(response *meilisearch.SearchResponse) 
 		var tags []string
 		if document.Tags != nil {
 			tagsList := documentHits[0].Tags
-			for _, tag := range tagsList {
-				tags = append(tags, tag)
-			}
+			tags = append(tags, tagsList...)
 		}
 
 		posts = append(posts, PostMetadata{
