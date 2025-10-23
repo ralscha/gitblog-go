@@ -288,7 +288,7 @@ header, .indexarticle {
 .query form input[type=search] {
     width: 270px;
     font-family: "Open Sans", sans-serif;
-    font-size: 19px;
+    font-size: 18px;
     padding: 8px 12px;
     border: 2px solid var(--header-bottom);
     border-radius: 6px;
@@ -306,7 +306,7 @@ header, .indexarticle {
 
 .query form input[type=submit] {
     font-family: "Open Sans", sans-serif;
-    font-size: 19px;
+    font-size: 18px;
     padding: 8px 16px;
     border: 2px solid var(--index-article-link);
     border-radius: 6px;
@@ -324,7 +324,7 @@ header, .indexarticle {
 
 .query select {
     font-family: "Open Sans", sans-serif;
-    font-size: 19px;
+    font-size: 18px;
     padding: 8px 12px;
     border: 2px solid var(--header-bottom);
     border-radius: 6px;
@@ -489,7 +489,7 @@ p > small.gh {
 
 .markdown-body, .markdown-body .x-form-display-field {
     font-family: "Open Sans", sans-serif;
-    font-size: 19px;
+    font-size: 18px;
 }
 
 .markdown-body h1 > a, .markdown-body h2 > a, .markdown-body h3 > a, .markdown-body h4 > a, .markdown-body h5 > a, .markdown-body h6 > a {
