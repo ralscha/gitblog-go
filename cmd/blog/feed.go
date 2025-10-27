@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/gorilla/feeds"
-	"github.com/sabloger/sitemap-generator/smg"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/gorilla/feeds"
+	"github.com/sabloger/sitemap-generator/smg"
 )
 
 func (app *application) writeFeeds(postMetadata []PostMetadata) error {
@@ -108,7 +109,7 @@ func (app *application) writeFeeds(postMetadata []PostMetadata) error {
 }
 
 func (app *application) writeSitemap(postMetadata []PostMetadata) error {
-	lastUpdated := time.Now()
+	lastUpdated := time.Now().Truncate(time.Second)
 	for _, post := range postMetadata {
 		var updated time.Time
 		if post.Updated != "" {
@@ -119,7 +120,7 @@ func (app *application) writeSitemap(postMetadata []PostMetadata) error {
 			}
 
 			if updated.After(lastUpdated) {
-				lastUpdated = updated
+				lastUpdated = updated.Truncate(time.Second)
 			}
 		}
 	}
@@ -139,6 +140,7 @@ func (app *application) writeSitemap(postMetadata []PostMetadata) error {
 			if err != nil {
 				return fmt.Errorf("failed to parse updated time: %w", err)
 			}
+			updated = updated.Truncate(time.Second)
 		}
 
 		err := sm.Add(&smg.SitemapLoc{
