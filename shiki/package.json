@@ -5,6 +5,6 @@
   "main": "cli.js",
   "type": "module",
   "dependencies": {
-    "shiki": "3.8.1"
+    "shiki": "3.14.0"
   }
 }
