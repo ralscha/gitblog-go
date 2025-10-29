@@ -18,7 +18,7 @@
 
     <div class="query">
 		<form action="/index.html" method="get">
-		  <input type="search" name="query"{{ if .Query }} value="{{ .Query }}"{{ end }}><input type="submit" value="Search">
+		  <input type="search" id="searchInput" name="query"{{ if .Query }} value="{{ .Query }}"{{ end }}><input type="submit" value="Search">
 		</form>
 
 		<select id="yearSelect" onchange="window.location.href='/index.html?year=' + this.value">
@@ -27,6 +27,15 @@
 			{{ end }}
 		</select>
 	</div>
+
+	<script>
+		document.getElementById('searchInput').addEventListener('search', function(e) {
+			if (this.value === '') {
+				var selectedYear = document.getElementById('yearSelect').value;
+				window.location.href = '/index.html?year=' + selectedYear;
+			}
+		});
+	</script>
 
   </header>
 {{ range .Posts }}
