@@ -1,12 +1,12 @@
 module gitblog
 
-go 1.25.4
+go 1.25.5
 
 require (
 	codnect.io/chrono v1.1.3
 	github.com/andybalholm/brotli v1.2.0
 	github.com/go-chi/chi/v5 v5.2.3
-	github.com/go-git/go-git/v5 v5.16.3
+	github.com/go-git/go-git/v5 v5.16.4
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/feeds v1.2.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
@@ -53,7 +53,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.44.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
