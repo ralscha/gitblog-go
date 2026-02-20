@@ -6,10 +6,8 @@ import (
 )
 
 func (app *application) backgroundTask(r *http.Request, fn func() error) {
-	app.wg.Add(1)
 
-	go func() {
-		defer app.wg.Done()
+	app.wg.Go(func() {
 
 		defer func() {
 			err := recover()
@@ -22,5 +20,5 @@ func (app *application) backgroundTask(r *http.Request, fn func() error) {
 		if err != nil {
 			app.reportServerError(r, err)
 		}
-	}()
+	})
 }

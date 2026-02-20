@@ -258,9 +258,9 @@ func collectLinks(htmlContent string) ([]string, error) {
 }
 
 func removeFragment(url string) string {
-	pos := strings.Index(url, "#")
-	if pos != -1 {
-		return url[:pos]
+	before, _, ok := strings.Cut(url, "#")
+	if ok {
+		return before
 	}
 	return url
 }

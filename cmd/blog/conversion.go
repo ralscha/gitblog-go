@@ -165,10 +165,10 @@ func (app *application) shiki(htmlContent string) (string, error) {
 			for _, a := range n.Attr {
 				if strings.HasPrefix(a.Key, "class") && strings.Contains(a.Val, "language-") {
 					lang := "markup"
-					classes := strings.Fields(a.Val)
-					for _, cl := range classes {
-						if strings.HasPrefix(cl, "language-") {
-							lang = strings.TrimPrefix(cl, "language-")
+					classes := strings.FieldsSeq(a.Val)
+					for cl := range classes {
+						if after, ok := strings.CutPrefix(cl, "language-"); ok {
+							lang = after
 							break
 						}
 					}

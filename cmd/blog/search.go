@@ -103,7 +103,7 @@ func unique(intSlice []int) []int {
 }
 
 func (s *SearchService) DeleteAll() error {
-	_, err := s.client.Index(IndexName).DeleteAllDocuments()
+	_, err := s.client.Index(IndexName).DeleteAllDocuments(nil)
 	if err != nil {
 		return err
 	}
