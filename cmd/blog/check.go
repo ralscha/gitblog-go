@@ -167,33 +167,39 @@ func (app *application) checkBrokenLinks() {
 					}
 					continue
 				}
-				checkedUrls[cleanedUpLink] = struct{}{}
+				func() {
+					defer func() {
+						_ = resp.Body.Close()
+					}()
 
-				if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-					continue
-				}
+					checkedUrls[cleanedUpLink] = struct{}{}
 
-				if resp.StatusCode == 429 {
-					continue
-				}
-
-				if resp.StatusCode >= 300 && resp.StatusCode <= 399 {
-					location := resp.Header.Get("Location")
-					urlCheck := URLCheck{
-						URL:      link,
-						Post:     post.URL,
-						Status:   resp.StatusCode,
-						Location: location,
+					if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+						return
 					}
-					urlChecks = append(urlChecks, urlCheck)
-				} else {
-					urlCheck := URLCheck{
-						URL:    link,
-						Post:   post.URL,
-						Status: resp.StatusCode,
+
+					if resp.StatusCode == 429 {
+						return
 					}
-					urlChecks = append(urlChecks, urlCheck)
-				}
+
+					if resp.StatusCode >= 300 && resp.StatusCode <= 399 {
+						location := resp.Header.Get("Location")
+						urlCheck := URLCheck{
+							URL:      link,
+							Post:     post.URL,
+							Status:   resp.StatusCode,
+							Location: location,
+						}
+						urlChecks = append(urlChecks, urlCheck)
+					} else {
+						urlCheck := URLCheck{
+							URL:    link,
+							Post:   post.URL,
+							Status: resp.StatusCode,
+						}
+						urlChecks = append(urlChecks, urlCheck)
+					}
+				}()
 			}
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/meilisearch/meilisearch-go"
@@ -108,17 +109,21 @@ func (s *SearchService) DeleteAll() error {
 		return err
 	}
 
+	s.publishedYears = nil
+
 	return nil
 }
 
 func (s *SearchService) IndexPosts(posts []PostMetadata) error {
 	documents := make([]Document, len(posts))
+	publishedYears := make([]int, 0, len(posts))
 	for i, post := range posts {
 		publishedTime, err := time.Parse(time.RFC3339, post.Published)
 		if err != nil {
 			return err
 		}
 		publishedYear := publishedTime.Year()
+		publishedYears = append(publishedYears, publishedYear)
 
 		var updatedSeconds int64 = 0
 		if post.Updated != "" {
@@ -146,6 +151,12 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) error {
 	if err != nil {
 		return err
 	}
+
+	publishedYears = unique(publishedYears)
+	slices.SortFunc(publishedYears, func(i, j int) int {
+		return j - i
+	})
+	s.publishedYears = publishedYears
 
 	return nil
 }
@@ -176,7 +187,7 @@ func (s *SearchService) SearchPostsOfYear(year int) ([]PostMetadata, error) {
 
 func (s *SearchService) SearchWithTag(tag string) ([]PostMetadata, error) {
 	request := meilisearch.SearchRequest{
-		Filter:               "tags=" + tag,
+		Filter:               "tags = \"" + escapeFilterValue(tag) + "\"",
 		Limit:                9_000,
 		AttributesToRetrieve: attributesToRetrieve,
 	}
@@ -187,6 +198,12 @@ func (s *SearchService) SearchWithTag(tag string) ([]PostMetadata, error) {
 
 	posts := s.mapToPostMetadata(response)
 	return posts, nil
+}
+
+func escapeFilterValue(value string) string {
+	value = strings.ReplaceAll(value, `\\`, `\\\\`)
+	value = strings.ReplaceAll(value, `"`, `\\"`)
+	return value
 }
 
 func (s *SearchService) Search(query string) ([]PostMetadata, error) {

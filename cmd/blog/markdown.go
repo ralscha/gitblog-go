@@ -2,6 +2,11 @@ package main
 
 import (
 	"context"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+
 	"github.com/yuin/goldmark"
 	emoji "github.com/yuin/goldmark-emoji"
 	"github.com/yuin/goldmark/extension"
@@ -9,28 +14,49 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"go.abhg.dev/goldmark/anchor"
 	"go.abhg.dev/goldmark/mermaid"
-	"os/exec"
-	"strings"
 )
 
 type dockerCLI struct{}
 
 func (c *dockerCLI) CommandContext(ctx context.Context, args ...string) *exec.Cmd {
 	// docker run --rm -u `id -u`:`id -g` -v /path/to/diagrams:/data minlag/mermaid-cli -i diagram.mmd
+	if len(args) < 2 {
+		path := "docker"
+		args = append([]string{"run", "--rm", "minlag/mermaid-cli"}, args...)
+		return exec.CommandContext(ctx, path, args...)
+	}
 
-	dir := args[1]
-	baseDir := dir[:strings.LastIndex(dir, "/")]
-	filename := dir[strings.LastIndex(dir, "/")+1:]
+	inputPath := args[1]
+	baseDir := filepath.Dir(inputPath)
+	if baseDir == "." {
+		baseDir = ""
+	}
 
-	// change permission of the file to 666
-	_ = exec.Command("chmod", "666", dir).Run()
+	if len(args) > 3 {
+		outputDir := filepath.Dir(args[3])
+		if outputDir != "." && outputDir != "" && outputDir != baseDir {
+			baseDir = filepath.Dir(outputDir)
+		}
+	}
 
-	args[1] = filename
-	_ = exec.Command("chmod", "666", args[3]).Run()
-	args[3] = args[3][len(baseDir)+1:]
+	if runtime.GOOS != "windows" {
+		_ = exec.Command("chmod", "666", inputPath).Run()
+	}
+
+	args[1] = filepath.Base(inputPath)
+	if len(args) > 3 {
+		if runtime.GOOS != "windows" {
+			_ = exec.Command("chmod", "666", args[3]).Run()
+		}
+		args[3] = filepath.Base(args[3])
+	}
 
 	path := "docker"
-	args = append([]string{"run", "--rm", "-v", baseDir + ":/data", "minlag/mermaid-cli"}, args...)
+	if baseDir != "" {
+		args = append([]string{"run", "--rm", "-v", baseDir + ":/data", "minlag/mermaid-cli"}, args...)
+	} else {
+		args = append([]string{"run", "--rm", "minlag/mermaid-cli"}, args...)
+	}
 	return exec.CommandContext(ctx, path, args...)
 }
 

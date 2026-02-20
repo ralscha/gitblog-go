@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
+
+	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -30,6 +31,7 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 			err := recover()
 			if err != nil {
 				app.reportServerError(r, fmt.Errorf("%s", err))
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}
 		}()
 
