@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/google/go-github/v57/github"
 	"net/http"
 	"slices"
 	"strconv"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/go-github/v57/github"
 )
 
 func (app *application) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {

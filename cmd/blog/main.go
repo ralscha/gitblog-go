@@ -1,16 +1,17 @@
 package main
 
 import (
-	"codnect.io/chrono"
 	"context"
 	"gitblog/assets"
-	"github.com/speps/go-hashids/v2"
 	"log"
 	"log/slog"
 	"os"
 	"runtime/debug"
 	"sync"
 	"text/template"
+
+	"codnect.io/chrono"
+	"github.com/speps/go-hashids/v2"
 )
 
 func main() {

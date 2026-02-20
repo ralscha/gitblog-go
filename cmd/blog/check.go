@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"gitblog/assets"
-	"golang.org/x/net/html"
 	"net/http"
 	"net/url"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 func (app *application) checkBrokenLinks() {
