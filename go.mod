@@ -1,6 +1,6 @@
 module gitblog
 
-go 1.26.0
+go 1.26.1
 
 require (
 	codnect.io/chrono v1.1.3
@@ -20,14 +20,14 @@ require (
 	github.com/yuin/goldmark-emoji v1.0.6
 	go.abhg.dev/goldmark/anchor v0.2.0
 	go.abhg.dev/goldmark/mermaid v0.6.0
-	golang.org/x/net v0.51.0
+	golang.org/x/net v0.52.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/ProtonMail/go-crypto v1.3.0 // indirect
+	github.com/ProtonMail/go-crypto v1.4.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -53,9 +53,9 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
