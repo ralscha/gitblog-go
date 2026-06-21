@@ -39,14 +39,13 @@ func compressFileWithBrotli(filePath string) error {
 	}()
 
 	brotliWriter := brotli.NewWriter(destFile)
-	defer func() {
-		if err := brotliWriter.Close(); err != nil {
-			fmt.Printf("failed to close brotli writer: %v\n", err)
-		}
-	}()
 
 	if _, err := io.Copy(brotliWriter, sourceFile); err != nil {
 		return fmt.Errorf("error compressing file with Brotli: %w", err)
+	}
+
+	if err := brotliWriter.Close(); err != nil {
+		return fmt.Errorf("failed to close brotli writer: %w", err)
 	}
 
 	return nil
@@ -112,11 +111,6 @@ func compressFileWithGzip(filePath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create gzip writer: %w", err)
 	}
-	defer func() {
-		if err := gzWriter.Close(); err != nil {
-			fmt.Printf("failed to close gzip writer: %v\n", err)
-		}
-	}()
 
 	if _, err := io.Copy(gzWriter, srcFile); err != nil {
 		return fmt.Errorf("failed to compress and write file: %w", err)

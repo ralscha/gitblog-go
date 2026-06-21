@@ -41,11 +41,11 @@ func (app *application) writeFeeds(postMetadata []PostMetadata) error {
 
 		feedItems[i] = &feeds.Item{
 			Title:       post.Title,
-			Link:        &feeds.Link{Href: app.config.Blog.URL + post.URL},
-			Source:      &feeds.Link{Href: app.config.Blog.URL + post.URL},
+			Link:        &feeds.Link{Href: absoluteBlogURL(app.config.Blog.URL, post.URL)},
+			Source:      &feeds.Link{Href: absoluteBlogURL(app.config.Blog.URL, post.URL)},
 			Author:      &feeds.Author{Name: app.config.Blog.Author},
 			Description: description,
-			Id:          app.config.Blog.URL + post.URL,
+			Id:          absoluteBlogURL(app.config.Blog.URL, post.URL),
 			Updated:     updated,
 			Created:     published,
 		}

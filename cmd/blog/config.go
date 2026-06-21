@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/spf13/viper"
 )
 
@@ -59,6 +61,7 @@ func LoadConfig() (Config, error) {
 	}
 
 	viper.SetEnvPrefix("golb")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
 	err = viper.Unmarshal(&cfg)

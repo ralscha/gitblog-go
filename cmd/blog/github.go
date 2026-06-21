@@ -117,10 +117,13 @@ func (gcs *GitHubCodeService) InsertCode(markdown string) (string, error) {
 
 func getLines(code string, from, to int) []string {
 	lines := strings.Split(code, "\n")
-	if from <= len(lines) && to <= len(lines) {
-		return lines[from-1 : to]
+	if from < 1 || from > len(lines) || to < from {
+		return lines
 	}
-	return lines
+	if to > len(lines) {
+		to = len(lines)
+	}
+	return lines[from-1 : to]
 }
 
 func (gcs *GitHubCodeService) fetchCode(url string) (string, error) {

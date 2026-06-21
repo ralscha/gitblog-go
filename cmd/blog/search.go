@@ -71,15 +71,6 @@ func NewSearchService(config Config) (*SearchService, error) {
 		publishedYears = append(publishedYears, year.PublishedYear)
 	}
 
-	for _, result := range response.Results {
-		var doc Document
-		err := result.DecodeInto(&doc)
-		if err != nil {
-			fmt.Printf("decoding document failed: %v\n", err)
-			continue
-		}
-		publishedYears = append(publishedYears, doc.PublishedYear)
-	}
 	publishedYears = unique(publishedYears)
 	slices.SortFunc(publishedYears, func(i, j int) int {
 		return j - i
@@ -92,20 +83,29 @@ func NewSearchService(config Config) (*SearchService, error) {
 }
 
 func unique(intSlice []int) []int {
-	keys := make(map[int]bool)
-	var list []int
+	seen := make(map[int]struct{}, len(intSlice))
+	list := make([]int, 0, len(intSlice))
 	for _, entry := range intSlice {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
+		if _, ok := seen[entry]; ok {
+			continue
 		}
+		seen[entry] = struct{}{}
+		list = append(list, entry)
 	}
 	return list
 }
 
+func (s *SearchService) waitForTask(taskUID int64) error {
+	_, err := s.client.Index(IndexName).WaitForTask(taskUID, 5*time.Second)
+	return err
+}
+
 func (s *SearchService) DeleteAll() error {
-	_, err := s.client.Index(IndexName).DeleteAllDocuments(nil)
+	task, err := s.client.Index(IndexName).DeleteAllDocuments(nil)
 	if err != nil {
+		return err
+	}
+	if err := s.waitForTask(task.TaskUID); err != nil {
 		return err
 	}
 
@@ -147,8 +147,11 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) error {
 		}
 	}
 
-	_, err := s.client.Index(IndexName).AddDocuments(documents, nil)
+	task, err := s.client.Index(IndexName).AddDocuments(documents, nil)
 	if err != nil {
+		return err
+	}
+	if err := s.waitForTask(task.TaskUID); err != nil {
 		return err
 	}
 

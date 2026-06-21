@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var headerPattern = regexp.MustCompile(`(?s)---(.*?)---(.*)`)
+var headerPattern = regexp.MustCompile(`(?s)\A---\r?\n(.*?)\r?\n---\r?\n?(.*)\z`)
 
 func (app *application) convert(markdownFile string) error {
 	content, err := os.ReadFile(markdownFile)
@@ -95,7 +95,7 @@ func (app *application) convert(markdownFile string) error {
 		Updated:     postUpdated,
 		Tags:        header.Tags,
 		FeedbackURL: feedbackURL,
-		URL:         app.config.Blog.URL + url,
+		URL:         absoluteBlogURL(app.config.Blog.URL, url),
 	}
 
 	tmpl := template.Must(template.ParseFS(assets.EmbeddedHTML, "html/post.tmpl"))
@@ -130,13 +130,9 @@ func addTargetBlankToLinks(htmlStr string) (string, error) {
 
 	var f func(*html.Node)
 	f = func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "a" {
-			for _, a := range n.Attr {
-				if a.Key == "href" && (strings.HasPrefix(a.Val, "http://") || strings.HasPrefix(a.Val, "https://")) {
-					n.Attr = append(n.Attr, html.Attribute{Key: "target", Val: "_blank"})
-					break
-				}
-			}
+		if n.Type == html.ElementNode && n.Data == "a" && hasExternalHref(n) {
+			setAttr(n, "target", "_blank")
+			setAttr(n, "rel", "noopener noreferrer")
 		}
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			f(c)
@@ -173,7 +169,7 @@ func (app *application) shiki(htmlContent string) (string, error) {
 						}
 					}
 
-					code, err := app.runShiki(lang, html.UnescapeString(n.FirstChild.Data))
+					code, err := app.runShiki(lang, nodeText(n))
 					if err != nil {
 						return err
 					}
@@ -263,6 +259,40 @@ func cleanupShikiOutput(htmlContent string) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+func hasExternalHref(n *html.Node) bool {
+	for _, attr := range n.Attr {
+		if attr.Key == "href" {
+			return strings.HasPrefix(attr.Val, "http://") || strings.HasPrefix(attr.Val, "https://")
+		}
+	}
+	return false
+}
+
+func setAttr(n *html.Node, key, value string) {
+	for i, attr := range n.Attr {
+		if attr.Key == key {
+			n.Attr[i].Val = value
+			return
+		}
+	}
+	n.Attr = append(n.Attr, html.Attribute{Key: key, Val: value})
+}
+
+func nodeText(n *html.Node) string {
+	var sb strings.Builder
+	var walk func(*html.Node)
+	walk = func(node *html.Node) {
+		if node.Type == html.TextNode {
+			sb.WriteString(node.Data)
+		}
+		for child := node.FirstChild; child != nil; child = child.NextSibling {
+			walk(child)
+		}
+	}
+	walk(n)
+	return sb.String()
 }
 
 func findFirstChild(n *html.Node, tag string) *html.Node {

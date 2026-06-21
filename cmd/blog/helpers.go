@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 func (app *application) backgroundTask(r *http.Request, fn func() error) {
@@ -21,4 +22,8 @@ func (app *application) backgroundTask(r *http.Request, fn func() error) {
 			app.reportServerError(r, err)
 		}
 	})
+}
+
+func absoluteBlogURL(baseURL, path string) string {
+	return strings.TrimRight(baseURL, "/") + "/" + strings.TrimLeft(path, "/")
 }

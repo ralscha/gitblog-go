@@ -35,9 +35,10 @@ tasks:
       - go build -ldflags='-s' gitblog/cmd/blog
 
   build-linux-amd64:
+    env:
+      GOOS: linux
+      GOARCH: amd64
     cmds:
-      - set GOOS=linux
-      - set GOARCH=amd64
       - go build -ldflags='-s -w' -trimpath gitblog/cmd/blog
 
   install:

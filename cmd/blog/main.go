@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"gitblog/assets"
-	"log"
 	"log/slog"
 	"os"
 	"runtime/debug"
@@ -62,7 +61,7 @@ type application struct {
 func runServer(logger *slog.Logger) error {
 	cfg, err := LoadConfig()
 	if err != nil {
-		log.Fatalf("reading config failed %v\n", err)
+		return err
 	}
 
 	mailer, err := NewMailer(cfg.SMTP.Host,
@@ -121,7 +120,7 @@ func runServer(logger *slog.Logger) error {
 func runIndex(logger *slog.Logger) error {
 	cfg, err := LoadConfig()
 	if err != nil {
-		log.Fatalf("reading config failed %v\n", err)
+		return err
 	}
 
 	searchService, err := NewSearchService(cfg)
@@ -146,7 +145,7 @@ func runIndex(logger *slog.Logger) error {
 func runReport(logger *slog.Logger) error {
 	cfg, err := LoadConfig()
 	if err != nil {
-		log.Fatalf("reading config failed %v\n", err)
+		return err
 	}
 
 	app := &application{
