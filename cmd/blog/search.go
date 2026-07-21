@@ -190,7 +190,7 @@ func (s *SearchService) SearchPostsOfYear(year int) ([]PostMetadata, error) {
 
 func (s *SearchService) SearchWithTag(tag string) ([]PostMetadata, error) {
 	request := meilisearch.SearchRequest{
-		Filter:               "tags = \"" + escapeFilterValue(tag) + "\"",
+		Filter:               tagFilter(tag),
 		Limit:                9_000,
 		AttributesToRetrieve: attributesToRetrieve,
 	}
@@ -203,10 +203,12 @@ func (s *SearchService) SearchWithTag(tag string) ([]PostMetadata, error) {
 	return posts, nil
 }
 
+func tagFilter(tag string) string {
+	return `tags = "` + escapeFilterValue(tag) + `"`
+}
+
 func escapeFilterValue(value string) string {
-	value = strings.ReplaceAll(value, `\\`, `\\\\`)
-	value = strings.ReplaceAll(value, `"`, `\\"`)
-	return value
+	return strings.ReplaceAll(value, `"`, `\"`)
 }
 
 func (s *SearchService) Search(query string) ([]PostMetadata, error) {
