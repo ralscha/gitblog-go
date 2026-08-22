@@ -1,11 +1,11 @@
 module gitblog
 
-go 1.26.6
+go 1.27.0
 
 require (
 	codnect.io/chrono v1.1.3
 	github.com/andybalholm/brotli v1.2.2
-	github.com/go-chi/chi/v5 v5.3.1
+	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/feeds v1.2.0
