@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	codnect.io/chrono v1.1.3
-	github.com/andybalholm/brotli v1.2.2
+	github.com/andybalholm/brotli v1.2.3
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/google/go-github/v57 v57.0.0
@@ -46,7 +46,7 @@ require (
 	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
-	github.com/skeema/knownhosts v1.3.2 // indirect
+	github.com/skeema/knownhosts v1.3.3 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
