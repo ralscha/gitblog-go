@@ -1,6 +1,6 @@
 module gitblog
 
-go 1.27.0
+go 1.27.1
 
 require (
 	codnect.io/chrono v1.1.3
@@ -16,7 +16,7 @@ require (
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.21.0
 	github.com/wneessen/go-mail v0.8.1
-	github.com/yuin/goldmark v1.8.5
+	github.com/yuin/goldmark v1.8.6
 	github.com/yuin/goldmark-emoji v1.0.6
 	go.abhg.dev/goldmark/anchor v0.2.0
 	go.abhg.dev/goldmark/mermaid v0.6.0
@@ -53,7 +53,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/crypto v0.56.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
