@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"compress/gzip"
 	"fmt"
-	"github.com/andybalholm/brotli"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/andybalholm/brotli"
 )
 
 func siblingPath(filePath, newExt string) string {
@@ -16,39 +18,9 @@ func siblingPath(filePath, newExt string) string {
 }
 
 func compressFileWithBrotli(filePath string) error {
-
-	sourceFile, err := os.Open(filePath)
-	if err != nil {
-		return fmt.Errorf("error opening source file: %w", err)
-	}
-	defer func() {
-		if err := sourceFile.Close(); err != nil {
-			fmt.Printf("failed to close source file: %v\n", err)
-		}
-	}()
-
-	destFilePath := filePath + ".br"
-	destFile, err := os.Create(destFilePath)
-	if err != nil {
-		return fmt.Errorf("error creating destination file: %w", err)
-	}
-	defer func() {
-		if err := destFile.Close(); err != nil {
-			fmt.Printf("failed to close destination file: %v\n", err)
-		}
-	}()
-
-	brotliWriter := brotli.NewWriter(destFile)
-
-	if _, err := io.Copy(brotliWriter, sourceFile); err != nil {
-		return fmt.Errorf("error compressing file with Brotli: %w", err)
-	}
-
-	if err := brotliWriter.Close(); err != nil {
-		return fmt.Errorf("failed to close brotli writer: %w", err)
-	}
-
-	return nil
+	return compressFile(filePath, ".br", func(w io.Writer) (io.WriteCloser, error) {
+		return brotli.NewWriter(w), nil
+	})
 }
 
 func (app *application) collectAllMarkdownFiles() ([]string, error) {
@@ -57,6 +29,9 @@ func (app *application) collectAllMarkdownFiles() ([]string, error) {
 	err := filepath.Walk(app.config.Blog.PostDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("error walking directory: %w", err)
+		}
+		if info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir
 		}
 
 		if info.Name() == "DRAFT.md" {
@@ -85,40 +60,70 @@ func isHTMLFile(path string) bool {
 	return filepath.Ext(path) == ".html"
 }
 
+func removeGeneratedHTML(htmlPath string) (bool, error) {
+	removed := false
+	for _, path := range []string{htmlPath, htmlPath + ".gz", htmlPath + ".br"} {
+		if err := os.Remove(path); err != nil {
+			if !os.IsNotExist(err) {
+				return false, fmt.Errorf("remove generated file %s: %w", path, err)
+			}
+			continue
+		}
+		removed = true
+	}
+	return removed, nil
+}
+
 func compressFileWithGzip(filePath string) error {
-	srcFile, err := os.Open(filePath)
+	return compressFile(filePath, ".gz", func(w io.Writer) (io.WriteCloser, error) {
+		return gzip.NewWriterLevel(w, gzip.BestCompression)
+	})
+}
+
+func compressFile(filePath, suffix string, newWriter func(io.Writer) (io.WriteCloser, error)) error {
+	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to open source file: %w", err)
+		return fmt.Errorf("read source file: %w", err)
 	}
-	defer func() {
-		if err := srcFile.Close(); err != nil {
-			fmt.Printf("failed to close source file: %v\n", err)
-		}
-	}()
 
-	destPath := filePath + ".gz"
-	destFile, err := os.Create(destPath)
+	var compressed bytes.Buffer
+	writer, err := newWriter(&compressed)
 	if err != nil {
-		return fmt.Errorf("failed to create destination file: %w", err)
+		return fmt.Errorf("create compressor: %w", err)
 	}
-	defer func() {
-		if err := destFile.Close(); err != nil {
-			fmt.Printf("failed to close destination file: %v\n", err)
-		}
-	}()
-
-	gzWriter, err := gzip.NewWriterLevel(destFile, gzip.BestCompression)
-	if err != nil {
-		return fmt.Errorf("failed to create gzip writer: %w", err)
+	if _, err := writer.Write(content); err != nil {
+		_ = writer.Close()
+		return fmt.Errorf("compress file: %w", err)
+	}
+	if err := writer.Close(); err != nil {
+		return fmt.Errorf("finish compressed file: %w", err)
 	}
 
-	if _, err := io.Copy(gzWriter, srcFile); err != nil {
-		return fmt.Errorf("failed to compress and write file: %w", err)
+	if err := writeFileAtomic(filePath+suffix, compressed.Bytes(), 0644); err != nil {
+		return fmt.Errorf("write compressed file: %w", err)
 	}
-
-	if err := gzWriter.Close(); err != nil {
-		return fmt.Errorf("failed to close gzip writer: %w", err)
-	}
-
 	return nil
+}
+
+func writeFileAtomic(path string, content []byte, mode os.FileMode) error {
+	temporary, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+"-*")
+	if err != nil {
+		return err
+	}
+	temporaryPath := temporary.Name()
+	defer func() {
+		_ = temporary.Close()
+		_ = os.Remove(temporaryPath)
+	}()
+
+	if _, err := temporary.Write(content); err != nil {
+		return err
+	}
+	if err := temporary.Chmod(mode); err != nil {
+		return err
+	}
+	if err := temporary.Close(); err != nil {
+		return err
+	}
+	return os.Rename(temporaryPath, path)
 }

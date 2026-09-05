@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"gitblog/assets"
+	"html/template"
 	"log/slog"
 	"os"
 	"runtime/debug"
 	"sync"
-	"text/template"
 
 	"codnect.io/chrono"
 	"github.com/speps/go-hashids/v2"
@@ -16,32 +17,33 @@ import (
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-	if len(os.Args) > 1 {
-		switch os.Args[1] {
-		case "index":
-			err := runIndex(logger)
-			if err != nil {
-				trace := string(debug.Stack())
-				logger.Error(err.Error(), "trace", trace)
-				os.Exit(1)
-			}
-			return
-		case "report":
-			err := runReport(logger)
-			if err != nil {
-				trace := string(debug.Stack())
-				logger.Error(err.Error(), "trace", trace)
-				os.Exit(1)
-			}
-			return
-		}
-	}
-
-	err := runServer(logger)
-	if err != nil {
+	if err := run(os.Args[1:], logger); err != nil {
 		trace := string(debug.Stack())
 		logger.Error(err.Error(), "trace", trace)
 		os.Exit(1)
+	}
+}
+
+func run(args []string, logger *slog.Logger) error {
+	if len(args) > 1 {
+		return fmt.Errorf("unexpected arguments: %q", args[1:])
+	}
+	command := "serve"
+	if len(args) > 0 {
+		command = args[0]
+	}
+
+	switch command {
+	case "serve":
+		return runServer(logger)
+	case "index":
+		return runIndex(logger)
+	case "rebuild":
+		return runRebuild(logger)
+	case "report":
+		return runReport(logger)
+	default:
+		return fmt.Errorf("unknown command %q (expected serve, index, rebuild, or report)", command)
 	}
 }
 
@@ -55,6 +57,7 @@ type application struct {
 	searchService     *SearchService
 	hashID            *hashids.HashID
 	wg                sync.WaitGroup
+	updateMu          sync.Mutex
 	templates         map[string]*template.Template
 }
 
@@ -85,10 +88,10 @@ func runServer(logger *slog.Logger) error {
 		return err
 	}
 
-	templates := make(map[string]*template.Template)
-	templates["feedback"] = template.Must(template.ParseFS(assets.EmbeddedHTML, "html/feedback.tmpl"))
-	templates["feedback_ok"] = template.Must(template.ParseFS(assets.EmbeddedHTML, "html/feedback_ok.tmpl"))
-	templates["index"] = template.Must(template.ParseFS(assets.EmbeddedHTML, "html/index.tmpl"))
+	templates, err := loadTemplates()
+	if err != nil {
+		return err
+	}
 
 	app := &application{
 		config:            cfg,
@@ -103,7 +106,9 @@ func runServer(logger *slog.Logger) error {
 	}
 
 	_, err = app.taskScheduler.ScheduleWithCron(func(ctx context.Context) {
-		app.checkBrokenLinks()
+		if err := app.checkBrokenLinks(); err != nil {
+			app.logger.Error("broken-link check failed", "error", err)
+		}
 	}, "0 40 5 1 * *")
 	if err != nil {
 		return err
@@ -153,20 +158,62 @@ func runReport(logger *slog.Logger) error {
 		logger: logger,
 	}
 
-	app.checkBrokenLinks()
-
-	return nil
+	return app.checkBrokenLinks()
 }
 
-func (app *application) indexAllPosts() error {
-	app.logger.Info("deleting all documents from search index")
-	err := app.searchService.DeleteAll()
+func runRebuild(logger *slog.Logger) error {
+	cfg, err := LoadConfig()
 	if err != nil {
 		return err
 	}
 
+	searchService, err := NewSearchService(cfg)
+	if err != nil {
+		return err
+	}
+	templates, err := loadTemplates()
+	if err != nil {
+		return err
+	}
+
+	app := &application{
+		config:            cfg,
+		logger:            logger,
+		gitHubCodeService: NewGitHubCodeService(),
+		markdownService:   NewMarkdownService(),
+		searchService:     searchService,
+		templates:         templates,
+	}
+	return app.rebuildPosts()
+}
+
+func loadTemplates() (map[string]*template.Template, error) {
+	files := map[string]string{
+		"feedback":    "html/feedback.tmpl",
+		"feedback_ok": "html/feedback_ok.tmpl",
+		"index":       "html/index.tmpl",
+		"post":        "html/post.tmpl",
+	}
+	templates := make(map[string]*template.Template, len(files))
+	for name, file := range files {
+		parsed, err := template.ParseFS(assets.EmbeddedHTML, file)
+		if err != nil {
+			return nil, fmt.Errorf("parse %s template: %w", name, err)
+		}
+		templates[name] = parsed
+	}
+	return templates, nil
+}
+
+func (app *application) indexAllPosts() error {
 	app.logger.Info("reading all posts metadata from files")
 	postMetadatas, err := app.readAllMetadata()
+	if err != nil {
+		return err
+	}
+
+	app.logger.Info("deleting all documents from search index")
+	err = app.searchService.DeleteAll()
 	if err != nil {
 		return err
 	}

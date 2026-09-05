@@ -1,10 +1,14 @@
 package main
 
-import "time"
+import (
+	"html/template"
+	"time"
+)
 
 type Post struct {
+	SiteTitle   string
 	Title       string
-	HTML        string
+	HTML        template.HTML
 	Published   string
 	Updated     string
 	FeedbackURL string
@@ -39,9 +43,17 @@ type PostMetadata struct {
 }
 
 type SearchResults struct {
-	Posts []PostMetadata
-	Query string
-	Years []YearNavigation
+	SiteTitle       string
+	SiteDescription string
+	Posts           []PostMetadata
+	Query           string
+	Years           []YearNavigation
+}
+
+type FeedbackPage struct {
+	SiteTitle string
+	PostURL   string
+	Token     string
 }
 
 type PostHeader struct {

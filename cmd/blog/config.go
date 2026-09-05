@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -41,30 +42,60 @@ type Config struct {
 	}
 }
 
-func applyDefaults() {
-	viper.SetDefault("http.readTimeoutInSeconds", 10)
-	viper.SetDefault("http.writeTimeoutInSeconds", 10)
-	viper.SetDefault("http.idleTimeoutInSeconds", 60)
-	viper.SetDefault("http.defaultShutdownPeriodInSeconds", 30)
+func applyDefaults(v *viper.Viper) {
+	v.SetDefault("http.readTimeoutInSeconds", 10)
+	v.SetDefault("http.writeTimeoutInSeconds", 10)
+	v.SetDefault("http.idleTimeoutInSeconds", 60)
+	v.SetDefault("http.defaultShutdownPeriodInSeconds", 30)
 }
 
 func LoadConfig() (Config, error) {
 	var cfg Config
 
-	applyDefaults()
-	viper.SetConfigName("app")
-	viper.SetConfigType("env")
-	viper.AddConfigPath(".")
-	err := viper.ReadInConfig()
+	v := viper.New()
+	applyDefaults(v)
+	v.SetConfigName("app")
+	v.SetConfigType("env")
+	v.AddConfigPath(".")
+	err := v.ReadInConfig()
 	if err != nil {
-		return cfg, err
+		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); !ok {
+			return cfg, err
+		}
 	}
 
-	viper.SetEnvPrefix("golb")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
+	v.SetEnvPrefix("golb")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	for _, key := range []string{
+		"http.port",
+		"http.readTimeoutInSeconds",
+		"http.writeTimeoutInSeconds",
+		"http.idleTimeoutInSeconds",
+		"http.defaultShutdownPeriodInSeconds",
+		"smtp.host",
+		"smtp.port",
+		"smtp.username",
+		"smtp.password",
+		"smtp.sender",
+		"github.url",
+		"github.webhookSecret",
+		"github.privateKey",
+		"blog.postDir",
+		"blog.title",
+		"blog.author",
+		"blog.description",
+		"blog.url",
+		"blog.shikicli",
+		"blog.secret",
+		"meilisearch.host",
+		"meilisearch.key",
+	} {
+		if err := v.BindEnv(key); err != nil {
+			return cfg, err
+		}
+	}
 
-	err = viper.Unmarshal(&cfg)
+	err = v.Unmarshal(&cfg)
 	if err != nil {
 		return cfg, err
 	}

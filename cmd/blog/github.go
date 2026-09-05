@@ -15,6 +15,7 @@ import (
 const (
 	gitHubLink    = "https://github.com/"
 	gitHubRawLink = "https://raw.githubusercontent.com/"
+	maxGitHubCode = 5 << 20
 )
 
 type GitHubCodeService struct {
@@ -89,7 +90,10 @@ func (gcs *GitHubCodeService) InsertCode(markdown string) (string, error) {
 		if code != "" {
 			var replacementCode string
 			if from != 0 && to != 0 {
-				lines := getLines(code, from, to)
+				lines, err := getLines(code, from, to)
+				if err != nil {
+					return "", fmt.Errorf("select lines from %s: %w", completeURL, err)
+				}
 				replacementCode = strings.Join(lines, "\n")
 			} else {
 				replacementCode = code
@@ -115,15 +119,15 @@ func (gcs *GitHubCodeService) InsertCode(markdown string) (string, error) {
 	return sb.String(), nil
 }
 
-func getLines(code string, from, to int) []string {
+func getLines(code string, from, to int) ([]string, error) {
 	lines := strings.Split(code, "\n")
 	if from < 1 || from > len(lines) || to < from {
-		return lines
+		return nil, fmt.Errorf("invalid line range %d-%d for a %d-line file", from, to, len(lines))
 	}
 	if to > len(lines) {
 		to = len(lines)
 	}
-	return lines[from-1 : to]
+	return lines[from-1 : to], nil
 }
 
 func (gcs *GitHubCodeService) fetchCode(url string) (string, error) {
@@ -135,19 +139,21 @@ func (gcs *GitHubCodeService) fetchCode(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			fmt.Printf("failed to close response body: %v\n", err)
-		}
-	}()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("failed to fetch code, status code: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	if resp.ContentLength > maxGitHubCode {
+		return "", fmt.Errorf("GitHub code response is too large: %d bytes", resp.ContentLength)
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxGitHubCode+1))
 	if err != nil {
 		return "", err
+	}
+	if len(body) > maxGitHubCode {
+		return "", fmt.Errorf("GitHub code response exceeds %d bytes", maxGitHubCode)
 	}
 
 	code := string(body)

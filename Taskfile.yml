@@ -16,6 +16,10 @@ tasks:
     cmds:
       - golangci-lint run -v --timeout 5m
 
+  test:
+    cmds:
+      - go test ./...
+
   audit:
     cmds:
       - go vet ./...
@@ -26,6 +30,7 @@ tasks:
     cmds:
       - go get go@latest
       - go get -u ./...
+      - go fix ./...
       - go fmt ./...
       - go mod tidy
       - go mod verify

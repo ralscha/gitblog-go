@@ -1,10 +1,12 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/meilisearch/meilisearch-go"
@@ -16,6 +18,7 @@ const (
 
 type SearchService struct {
 	client         meilisearch.ServiceManager
+	yearsMu        sync.RWMutex
 	publishedYears []int
 }
 
@@ -64,8 +67,7 @@ func NewSearchService(config Config) (*SearchService, error) {
 	}
 	err = response.Results.DecodeInto(&years)
 	if err != nil {
-		fmt.Printf("decoding published years failed: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("decode published years: %w", err)
 	}
 	for _, year := range years {
 		publishedYears = append(publishedYears, year.PublishedYear)
@@ -73,13 +75,25 @@ func NewSearchService(config Config) (*SearchService, error) {
 
 	publishedYears = unique(publishedYears)
 	slices.SortFunc(publishedYears, func(i, j int) int {
-		return j - i
+		return cmp.Compare(j, i)
 	})
 
 	return &SearchService{
 		client:         c,
 		publishedYears: publishedYears,
 	}, nil
+}
+
+func (s *SearchService) PublishedYears() []int {
+	s.yearsMu.RLock()
+	defer s.yearsMu.RUnlock()
+	return slices.Clone(s.publishedYears)
+}
+
+func (s *SearchService) setPublishedYears(years []int) {
+	s.yearsMu.Lock()
+	defer s.yearsMu.Unlock()
+	s.publishedYears = slices.Clone(years)
 }
 
 func unique(intSlice []int) []int {
@@ -109,12 +123,17 @@ func (s *SearchService) DeleteAll() error {
 		return err
 	}
 
-	s.publishedYears = nil
+	s.setPublishedYears(nil)
 
 	return nil
 }
 
 func (s *SearchService) IndexPosts(posts []PostMetadata) error {
+	if len(posts) == 0 {
+		s.setPublishedYears(nil)
+		return nil
+	}
+
 	documents := make([]Document, len(posts))
 	publishedYears := make([]int, 0, len(posts))
 	for i, post := range posts {
@@ -157,9 +176,9 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) error {
 
 	publishedYears = unique(publishedYears)
 	slices.SortFunc(publishedYears, func(i, j int) int {
-		return j - i
+		return cmp.Compare(j, i)
 	})
-	s.publishedYears = publishedYears
+	s.setPublishedYears(publishedYears)
 
 	return nil
 }
@@ -184,8 +203,7 @@ func (s *SearchService) SearchPostsOfYear(year int) ([]PostMetadata, error) {
 		return nil, err
 	}
 
-	posts := s.mapToPostMetadata(response)
-	return posts, nil
+	return mapToPostMetadata(response)
 }
 
 func (s *SearchService) SearchWithTag(tag string) ([]PostMetadata, error) {
@@ -199,8 +217,7 @@ func (s *SearchService) SearchWithTag(tag string) ([]PostMetadata, error) {
 		return nil, err
 	}
 
-	posts := s.mapToPostMetadata(response)
-	return posts, nil
+	return mapToPostMetadata(response)
 }
 
 func tagFilter(tag string) string {
@@ -208,6 +225,7 @@ func tagFilter(tag string) string {
 }
 
 func escapeFilterValue(value string) string {
+	value = strings.ReplaceAll(value, `\`, `\\`)
 	return strings.ReplaceAll(value, `"`, `\"`)
 }
 
@@ -221,17 +239,15 @@ func (s *SearchService) Search(query string) ([]PostMetadata, error) {
 		return nil, err
 	}
 
-	posts := s.mapToPostMetadata(response)
-	return posts, nil
+	return mapToPostMetadata(response)
 }
 
-func (s *SearchService) mapToPostMetadata(response *meilisearch.SearchResponse) []PostMetadata {
-	var posts []PostMetadata
+func mapToPostMetadata(response *meilisearch.SearchResponse) ([]PostMetadata, error) {
+	posts := make([]PostMetadata, 0, response.Hits.Len())
 	documentHits := make([]Document, 0)
 	err := response.Hits.DecodeInto(&documentHits)
 	if err != nil {
-		fmt.Printf("decoding hit failed: %v\n", err)
-		return posts
+		return nil, fmt.Errorf("decode search hits: %w", err)
 	}
 	for _, document := range documentHits {
 		published := ""
@@ -262,5 +278,11 @@ func (s *SearchService) mapToPostMetadata(response *meilisearch.SearchResponse) 
 			Tags:        tags,
 		})
 	}
-	return posts
+	return posts, nil
+}
+
+func sortPostsNewest(posts []PostMetadata) {
+	slices.SortFunc(posts, func(a, b PostMetadata) int {
+		return b.PublishedTS.Compare(a.PublishedTS)
+	})
 }

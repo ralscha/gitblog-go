@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ralph's Blog</title>
+<title>{{ .SiteTitle }}</title>
 <link rel="stylesheet" href="assets/blog-9.css">
-<link href="/feed.rss" rel="alternate" type="application/rss+xml" title="Ralph's Blog: RSS Feed" />
-<link href="/feed.atom" rel="alternate" type="application/atom+xml" title="Ralph's Blog: Atom Feed" />
+<link href="/feed.rss" rel="alternate" type="application/rss+xml" title="{{ .SiteTitle }}: RSS Feed" />
+<link href="/feed.atom" rel="alternate" type="application/atom+xml" title="{{ .SiteTitle }}: Atom Feed" />
 </head>
 <body>
   <header>
     <h1>
-      Ralph's Blog
-      <span class="indexsubtitle">about this and that <span class="small">(<a href="/feed.rss">RSS</a> | <a href="/feed.atom">Atom</a>)</span></span>
+      {{ .SiteTitle }}
+      <span class="indexsubtitle">{{ .SiteDescription }} <span class="small">(<a href="/feed.rss">RSS</a> | <a href="/feed.atom">Atom</a>)</span></span>
     </h1>
 
 

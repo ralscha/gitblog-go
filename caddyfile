@@ -11,6 +11,7 @@
     path /submitFeedback
     path /feedback/*
     path /githubCallback
+    path /healthz
   }
   reverse_proxy @proxypaths localhost:8080
 }

@@ -1,41 +1,41 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"gitblog/assets"
+	"html/template"
+	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 	"time"
 
 	"golang.org/x/net/html"
 )
 
-func (app *application) checkBrokenLinks() {
-	fmt.Println("Checking broken links...")
+func (app *application) checkBrokenLinks() error {
+	app.logger.Info("checking broken links")
 
-	ignoreUrlsFile, err := os.ReadFile(app.config.Blog.PostDir + "/ignore-urls.txt")
-	if err != nil {
-		app.logger.Error(err.Error())
-		return
+	ignoreURLsFile, err := os.ReadFile(filepath.Join(app.config.Blog.PostDir, "ignore-urls.txt"))
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("read ignored URLs: %w", err)
 	}
-
-	ignoreUrls := strings.Split(string(ignoreUrlsFile), "\n")
-	for i, url := range ignoreUrls {
-		ignoreUrls[i] = strings.ToLower(url)
-	}
+	ignoreURLs := parseIgnoredURLs(string(ignoreURLsFile))
 
 	posts, err := app.readAllMetadata()
 	if err != nil {
-		app.logger.Error(err.Error())
-		return
+		return err
 	}
 
 	httpClient := http.Client{
 		Timeout: 30 * time.Second,
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
 
 	checkedUrls := make(map[string]struct{})
@@ -59,7 +59,7 @@ func (app *application) checkBrokenLinks() {
 		for _, link := range links {
 			ignore := false
 			linkLower := strings.ToLower(link)
-			for _, ignoreURL := range ignoreUrls {
+			for _, ignoreURL := range ignoreURLs {
 				if strings.HasPrefix(linkLower, ignoreURL) {
 					ignore = true
 					break
@@ -80,26 +80,24 @@ func (app *application) checkBrokenLinks() {
 	checkedCount := 0
 	lastReportedProgress := -1
 
-	fmt.Printf("Found %d unique URLs to check\n", totalUrls)
+	app.logger.Info("collected links", "urls", totalUrls)
 
 	for _, post := range posts {
 		htmlFile := siblingPath(post.MarkdownFile, "html")
 		htmlContent, err := os.ReadFile(htmlFile)
 		if err != nil {
-			app.logger.Error(err.Error())
-			continue
+			return fmt.Errorf("read generated post %s: %w", htmlFile, err)
 		}
 
 		links, err := collectLinks(string(htmlContent))
 		if err != nil {
-			app.logger.Error(err.Error())
-			continue
+			return fmt.Errorf("collect links from %s: %w", htmlFile, err)
 		}
 
 		for _, link := range links {
 			ignore := false
 			linkLower := strings.ToLower(link)
-			for _, ignoreURL := range ignoreUrls {
+			for _, ignoreURL := range ignoreURLs {
 				if strings.HasPrefix(linkLower, ignoreURL) {
 					ignore = true
 					break
@@ -130,7 +128,7 @@ func (app *application) checkBrokenLinks() {
 				checkedCount++
 				progress := (checkedCount * 100) / totalUrls
 				if progress >= lastReportedProgress+10 {
-					fmt.Printf("Progress: %d%% (%d/%d URLs checked)\n", progress, checkedCount, totalUrls)
+					app.logger.Info("link-check progress", "percent", progress, "checked", checkedCount, "total", totalUrls)
 					lastReportedProgress = progress
 				}
 
@@ -140,28 +138,14 @@ func (app *application) checkBrokenLinks() {
 					continue
 				}
 
-				req.Header.Set("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
-				req.Header.Set("accept-encoding", "gzip, deflate, br, zstd")
-				req.Header.Set("accept-language", "en-US,en;q=0.9,de;q=0.8,th;q=0.7,hu;q=0.6")
-				req.Header.Set("cache-control", "max-age=0")
-				req.Header.Set("if-modified-since", "Wed, 02 Apr 2025 00:16:58 GMT")
-				req.Header.Set("if-none-match", `"d8vpyn1y38q111zf"`)
-				req.Header.Set("priority", "u=0, i")
-				req.Header.Set("sec-ch-ua", `"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"`)
-				req.Header.Set("sec-ch-ua-mobile", "?0")
-				req.Header.Set("sec-ch-ua-platform", `"Windows"`)
-				req.Header.Set("sec-fetch-dest", "document")
-				req.Header.Set("sec-fetch-mode", "navigate")
-				req.Header.Set("sec-fetch-site", "none")
-				req.Header.Set("sec-fetch-user", "?1")
-				req.Header.Set("upgrade-insecure-requests", "1")
-				req.Header.Set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
+				req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+				req.Header.Set("User-Agent", "gitblog-link-checker/1.0")
 
 				resp, err := httpClient.Do(req)
 				if err != nil {
-					if strings.Contains(err.Error(), "no such host") {
+					if _, ok := errors.AsType[*net.DNSError](err); ok {
 						failedDomains[domain] = struct{}{}
-						app.logger.Error(fmt.Sprintf("Domain %s marked as failed due to 'no such host' error: %s", domain, err.Error()))
+						app.logger.Error("domain lookup failed", "domain", domain, "error", err)
 					} else {
 						app.logger.Error(err.Error())
 					}
@@ -169,6 +153,7 @@ func (app *application) checkBrokenLinks() {
 				}
 				func() {
 					defer func() {
+						_, _ = io.Copy(io.Discard, resp.Body)
 						_ = resp.Body.Close()
 					}()
 
@@ -205,40 +190,48 @@ func (app *application) checkBrokenLinks() {
 	}
 
 	if len(urlChecks) > 0 {
-		fmt.Println("Broken links found:")
 		for _, urlCheck := range urlChecks {
-			fmt.Printf("  %s: %d\n", urlCheck.URL, urlCheck.Status)
+			app.logger.Warn("broken link", "url", urlCheck.URL, "status", urlCheck.Status)
 		}
 	} else {
-		fmt.Println("No broken links found.")
+		app.logger.Info("no broken links found")
 	}
 
 	tmpl, err := template.ParseFS(assets.EmbeddedHTML, "html/urlcheck.tmpl")
 	if err != nil {
-		app.logger.Error(err.Error())
-		return
+		return fmt.Errorf("parse URL report template: %w", err)
 	}
 
 	var output strings.Builder
 	err = tmpl.Execute(&output, urlChecks)
 	if err != nil {
-		app.logger.Error(err.Error())
-		return
+		return fmt.Errorf("render URL report: %w", err)
 	}
 
 	reportFile := app.config.Blog.PostDir + "/report/urlcheck.html"
-	err = os.MkdirAll(filepath.Dir(reportFile), os.ModePerm)
+	err = os.MkdirAll(filepath.Dir(reportFile), 0755)
 	if err != nil {
-		app.logger.Error(err.Error())
-		return
+		return fmt.Errorf("create URL report directory: %w", err)
 	}
 
-	err = os.WriteFile(reportFile, []byte(output.String()), 0644)
+	err = writeFileAtomic(reportFile, []byte(output.String()), 0644)
 	if err != nil {
-		app.logger.Error(err.Error())
-		return
+		return fmt.Errorf("write URL report: %w", err)
 	}
 
+	return nil
+}
+
+func parseIgnoredURLs(content string) []string {
+	var ignored []string
+	for line := range strings.Lines(content) {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		ignored = append(ignored, strings.ToLower(line))
+	}
+	return ignored
 }
 
 func collectLinks(htmlContent string) ([]string, error) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/wneessen/go-mail"
 	"regexp"
 	"time"
@@ -14,7 +15,21 @@ type Mailer struct {
 }
 
 func NewMailer(host string, port int, username, password, from string) (*Mailer, error) {
-	client, err := mail.NewClient(host, mail.WithTimeout(defaultTimeout), mail.WithSMTPAuth(mail.SMTPAuthLogin), mail.WithPort(port), mail.WithUsername(username), mail.WithPassword(password))
+	if username == "" && password != "" {
+		return nil, fmt.Errorf("SMTP password is configured without a username")
+	}
+
+	options := []mail.Option{mail.WithTimeout(defaultTimeout), mail.WithPort(port)}
+	if username == "" {
+		options = append(options, mail.WithSMTPAuth(mail.SMTPAuthNoAuth))
+	} else {
+		options = append(options,
+			mail.WithSMTPAuth(mail.SMTPAuthLogin),
+			mail.WithUsername(username),
+			mail.WithPassword(password),
+		)
+	}
+	client, err := mail.NewClient(host, options...)
 	if err != nil {
 		return nil, err
 	}

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -14,23 +16,21 @@ func (app *application) githubCallbackHandler(w http.ResponseWriter, r *http.Req
 
 	payload, err := github.ValidatePayload(r, []byte(app.config.Github.WebhookSecret))
 	if err != nil {
-		app.reportServerError(r, err)
+		app.logger.Warn("rejected GitHub webhook", "error", err)
+		clientError(w, http.StatusUnauthorized)
 		return
 	}
 	event, err := github.ParseWebHook(github.WebHookType(r), payload)
 	if err != nil {
-		app.reportServerError(r, err)
+		app.logger.Warn("rejected malformed GitHub webhook", "error", err)
+		clientError(w, http.StatusBadRequest)
 		return
 	}
 
 	_, ok := event.(*github.PushEvent)
 	if ok {
 		app.backgroundTask(r, func() error {
-			err := app.updatePosts()
-			if err != nil {
-				app.reportServerError(r, err)
-			}
-			return nil
+			return app.updatePosts()
 		})
 	}
 
@@ -38,171 +38,134 @@ func (app *application) githubCallbackHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) submitFeedbackHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	url := r.FormValue("url")
-	token := r.FormValue("token")
-	feedback := r.FormValue("feedback")
-	email := r.FormValue("email")
-	name := r.FormValue("name")
-
-	if feedback != "" && url != "" && token != "" && name == "" {
-		numbers, err := app.hashID.DecodeWithError(token)
-		if err != nil {
-			app.reportServerError(r, err)
-			return
+	if err := r.ParseForm(); err != nil {
+		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+			clientError(w, http.StatusRequestEntityTooLarge)
+		} else {
+			clientError(w, http.StatusBadRequest)
 		}
-		twoSecondsAgo := time.Now().Unix() - 2
-		if len(numbers) == 1 && int64(numbers[0]) < twoSecondsAgo {
-			app.backgroundTask(r, func() error {
-				err := app.mailer.SendFeedback(email, url, feedback)
-				if err != nil {
-					app.reportServerError(r, err)
-				}
-				return nil
-			})
-		}
+		return
 	}
 
-	err := app.templates["feedback_ok"].Execute(w, nil)
+	url := strings.TrimSpace(r.PostForm.Get("url"))
+	token := r.PostForm.Get("token")
+	feedback := strings.TrimSpace(r.PostForm.Get("feedback"))
+	email := strings.TrimSpace(r.PostForm.Get("email"))
+	name := r.PostForm.Get("name")
+
+	validURL := url != "" && len(url) <= 512 && !strings.ContainsAny(url, "\r\n")
+	validFeedback := feedback != "" && len(feedback) <= 20_000
+	validEmail := len(email) <= 320
+	if validFeedback && validURL && validEmail && name == "" && app.validFeedbackToken(token, time.Now()) {
+		app.backgroundTask(r, func() error {
+			return app.mailer.SendFeedback(email, url, feedback)
+		})
+	}
+
+	err := app.renderHTML(w, "feedback_ok", FeedbackPage{SiteTitle: app.config.Blog.Title})
 	if err != nil {
-		app.reportServerError(r, err)
+		app.serverError(w, r, err)
 		return
 	}
 }
 
 func (app *application) feedbackHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
 	url := chi.URLParam(r, "url")
 	token, err := app.hashID.Encode([]int{int(time.Now().Unix())})
 	if err != nil {
-		app.reportServerError(r, err)
+		app.serverError(w, r, err)
 		return
 	}
 
-	err = app.templates["feedback"].Execute(w, struct {
-		PostURL string
-		Token   string
-	}{
-		PostURL: url,
-		Token:   token,
+	err = app.renderHTML(w, "feedback", FeedbackPage{
+		SiteTitle: app.config.Blog.Title,
+		PostURL:   url,
+		Token:     token,
 	})
 	if err != nil {
-		app.reportServerError(r, err)
+		app.serverError(w, r, err)
 		return
 	}
 }
 
+func (app *application) healthHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("ok\n"))
+}
+
 func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
-	tag := r.FormValue("tag")
-	query := r.FormValue("query")
-	yearString := r.FormValue("year")
+	tag := strings.TrimSpace(r.URL.Query().Get("tag"))
+	query := strings.TrimSpace(r.URL.Query().Get("query"))
+	yearString := strings.TrimSpace(r.URL.Query().Get("year"))
 
 	year := -1
 	if yearString != "" {
 		var err error
 		year, err = strconv.Atoi(yearString)
-		if err != nil {
-			app.reportServerError(r, err)
+		if err != nil || year < 1 || year > 9999 {
+			clientError(w, http.StatusBadRequest)
 			return
 		}
 	}
 
-	publishedYears := app.searchService.publishedYears
-	data := SearchResults{}
+	publishedYears := app.searchService.PublishedYears()
+	data := SearchResults{
+		SiteTitle:       app.config.Blog.Title,
+		SiteDescription: app.config.Blog.Description,
+	}
 
 	if tag != "" {
 		posts, err := app.searchService.SearchWithTag(tag)
 		if err != nil {
-			app.reportServerError(r, err)
+			app.serverError(w, r, err)
 			return
 		}
-
-		yearNavigation := make([]YearNavigation, len(publishedYears))
-		for i, year := range publishedYears {
-			yearNavigation[i] = YearNavigation{
-				Year:    year,
-				Current: false,
-			}
-		}
+		sortPostsNewest(posts)
 
 		data.Posts = posts
 		data.Query = "tags:" + tag
-		data.Years = yearNavigation
+		data.Years = yearNavigation(publishedYears, -1)
 
 	} else if query != "" {
 		posts, err := app.searchService.Search(query)
 		if err != nil {
-			app.reportServerError(r, err)
+			app.serverError(w, r, err)
 			return
-		}
-		yearNavigation := make([]YearNavigation, len(publishedYears))
-		for i, year := range publishedYears {
-			yearNavigation[i] = YearNavigation{
-				Year:    year,
-				Current: false,
-			}
 		}
 
 		data.Posts = posts
 		data.Query = query
-		data.Years = yearNavigation
+		data.Years = yearNavigation(publishedYears, -1)
 	} else if year != -1 {
 		posts, err := app.searchService.SearchPostsOfYear(year)
 		if err != nil {
-			app.reportServerError(r, err)
+			app.serverError(w, r, err)
 			return
 		}
-
-		yearNavigation := make([]YearNavigation, len(publishedYears))
-		for i, y := range publishedYears {
-			yearNavigation[i] = YearNavigation{
-				Year:    y,
-				Current: y == year,
-			}
-		}
+		sortPostsNewest(posts)
 
 		data.Posts = posts
-		data.Years = yearNavigation
+		data.Years = yearNavigation(publishedYears, year)
 	} else {
 		currentYear := time.Now().Year()
+		if len(publishedYears) > 0 && !slices.Contains(publishedYears, currentYear) {
+			currentYear = publishedYears[0]
+		}
 		posts, err := app.searchService.SearchPostsOfYear(currentYear)
 		if err != nil {
-			app.reportServerError(r, err)
+			app.serverError(w, r, err)
 			return
 		}
-
-		if len(posts) == 0 {
-			currentYear = currentYear - 1
-			posts, err = app.searchService.SearchPostsOfYear(currentYear)
-			if err != nil {
-				app.reportServerError(r, err)
-				return
-			}
-		}
-
-		slices.SortFunc(posts, func(a, b PostMetadata) int {
-			return int(b.PublishedTS.Unix() - a.PublishedTS.Unix())
-		})
-
-		yearNavigation := make([]YearNavigation, len(publishedYears))
-		for i, y := range publishedYears {
-			yearNavigation[i] = YearNavigation{
-				Year:    y,
-				Current: y == currentYear,
-			}
-		}
+		sortPostsNewest(posts)
 
 		data.Posts = posts
-		data.Years = yearNavigation
+		data.Years = yearNavigation(publishedYears, currentYear)
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	err := app.templates["index"].Execute(w, data)
+	err := app.renderHTML(w, "index", data)
 	if err != nil {
-		app.reportServerError(r, err)
+		app.serverError(w, r, err)
 		return
 	}
 }

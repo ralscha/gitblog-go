@@ -3,42 +3,32 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"gitblog/assets"
 	"golang.org/x/net/html"
-	"gopkg.in/yaml.v3"
+	htmltemplate "html/template"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"text/template"
-	"time"
 )
 
 var headerPattern = regexp.MustCompile(`(?s)\A---\r?\n(.*?)\r?\n---\r?\n?(.*)\z`)
 
 func (app *application) convert(markdownFile string) error {
-	content, err := os.ReadFile(markdownFile)
+	header, body, err := readPostSource(markdownFile)
 	if err != nil {
-		return fmt.Errorf("failed to read markdown file: %w", err)
+		_, _ = removeGeneratedHTML(siblingPath(markdownFile, "html"))
+		return err
 	}
-
-	matcher := headerPattern.FindStringSubmatch(string(content))
-	if matcher == nil {
-		htmlPath := siblingPath(markdownFile, "html")
-		if err := os.Remove(htmlPath); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("failed to delete existing html file: %w", err)
-		}
-		return fmt.Errorf("content does not match header pattern")
+	if header.Draft {
+		_, err := removeGeneratedHTML(siblingPath(markdownFile, "html"))
+		return err
 	}
-
-	headerString := matcher[1]
-	header := PostHeader{}
-	if err := yaml.Unmarshal([]byte(headerString), &header); err != nil {
-		return fmt.Errorf("failed to unmarshal header: %w", err)
+	published, updated, err := validatePostHeader(header, markdownFile)
+	if err != nil {
+		_, _ = removeGeneratedHTML(siblingPath(markdownFile, "html"))
+		return err
 	}
-
-	body := matcher[2]
 
 	codeBody, err := app.gitHubCodeService.InsertCode(body)
 	if err != nil {
@@ -70,44 +60,30 @@ func (app *application) convert(markdownFile string) error {
 	url = filepath.ToSlash(url)
 	feedbackURL := strings.ReplaceAll(url, "/", "-")
 
-	var postPublished string
-	if header.Published != "" {
-		published, err := time.Parse(time.RFC3339, header.Published)
-		if err != nil {
-			return fmt.Errorf("failed to parse published time: %w", err)
-		}
-		postPublished = published.Format("2. January 2006")
-	}
-
 	var postUpdated string
-	if header.Updated != "" {
-		updated, err := time.Parse(time.RFC3339, header.Updated)
-		if err != nil {
-			return fmt.Errorf("failed to parse updated time: %w", err)
-		}
+	if !updated.IsZero() {
 		postUpdated = updated.Format("2. January 2006")
 	}
 
 	post := Post{
+		SiteTitle:   app.config.Blog.Title,
 		Title:       header.Title,
-		HTML:        htmlContent,
-		Published:   postPublished,
+		HTML:        htmltemplate.HTML(htmlContent), // Trusted Markdown from the configured Git repository.
+		Published:   published.Format("2. January 2006"),
 		Updated:     postUpdated,
 		Tags:        header.Tags,
 		FeedbackURL: feedbackURL,
 		URL:         absoluteBlogURL(app.config.Blog.URL, url),
 	}
 
-	tmpl := template.Must(template.ParseFS(assets.EmbeddedHTML, "html/post.tmpl"))
-
 	var output bytes.Buffer
-	err = tmpl.Execute(&output, post)
+	err = app.templates["post"].Execute(&output, post)
 	if err != nil {
 		return fmt.Errorf("failed to execute post template: %w", err)
 	}
 
 	htmlPath := siblingPath(markdownFile, "html")
-	if err := os.WriteFile(htmlPath, output.Bytes(), 0644); err != nil {
+	if err := writeFileAtomic(htmlPath, output.Bytes(), 0644); err != nil {
 		return fmt.Errorf("failed to write html file: %w", err)
 	}
 
@@ -318,33 +294,36 @@ func (app *application) runShiki(language, code string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create tmp file: %w", err)
 	}
-	defer func() {
-		if err := os.Remove(codeTmp.Name()); err != nil {
-			fmt.Printf("failed to remove temp file %s: %v\n", codeTmp.Name(), err)
-		}
-	}()
+	codePath := codeTmp.Name()
+	defer func() { _ = os.Remove(codePath) }()
 	if _, err := codeTmp.WriteString(code); err != nil {
+		_ = codeTmp.Close()
 		return "", fmt.Errorf("failed to write code to tmp file: %w", err)
+	}
+	if err := codeTmp.Close(); err != nil {
+		return "", fmt.Errorf("failed to close code tmp file: %w", err)
 	}
 
 	outTmp, err := os.CreateTemp("", "out")
 	if err != nil {
 		return "", fmt.Errorf("failed to create output tmp file: %w", err)
 	}
-	defer func() {
-		if err := os.Remove(outTmp.Name()); err != nil {
-			fmt.Printf("failed to remove temp file %s: %v\n", outTmp.Name(), err)
-		}
-	}()
+	outPath := outTmp.Name()
+	defer func() { _ = os.Remove(outPath) }()
+	if err := outTmp.Close(); err != nil {
+		return "", fmt.Errorf("failed to close output tmp file: %w", err)
+	}
 
-	cmd := exec.Command("node", app.config.Blog.Shikicli, codeTmp.Name(), outTmp.Name(), language)
-	_, err = cmd.Output()
+	cmd := exec.Command("node", app.config.Blog.Shikicli, codePath, outPath, language)
+	commandOutput, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("failed to run shiki", err)
+		if app.logger != nil {
+			app.logger.Warn("Shiki highlighting failed; using plain code", "error", err, "output", string(commandOutput))
+		}
 		return fmt.Sprintf(`<pre class="shiki"><code>%s</code></pre>`, html.EscapeString(code)), nil
 	}
 
-	content, err := os.ReadFile(outTmp.Name())
+	content, err := os.ReadFile(outPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read output tmp file: %w", err)
 	}
@@ -359,6 +338,18 @@ func (app *application) convertChangedMarkdowns() (bool, error) {
 	}
 	changed := false
 	for _, markdownFile := range markdownFiles {
+		header, _, err := readPostSource(markdownFile)
+		if err != nil {
+			return false, err
+		}
+		if header.Draft {
+			removed, err := removeGeneratedHTML(siblingPath(markdownFile, "html"))
+			if err != nil {
+				return false, err
+			}
+			changed = changed || removed
+			continue
+		}
 
 		markdownFileInfo, err := os.Stat(markdownFile)
 		if err != nil {

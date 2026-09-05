@@ -1,22 +1,21 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"os"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
-	"os"
-	"os/exec"
 )
 
 func (app *application) pullPosts() error {
 	postsDir := app.config.Blog.PostDir
 	newDir := false
 	if _, err := os.Stat(postsDir); os.IsNotExist(err) {
-		err = os.Mkdir(postsDir, 0755)
-		if err != nil {
-			return err
-		}
 		newDir = true
+	} else if err != nil {
+		return fmt.Errorf("inspect posts directory: %w", err)
 	}
 
 	auth, err := ssh.NewPublicKeysFromFile("git", app.config.Github.PrivateKey, "")
@@ -34,12 +33,17 @@ func (app *application) pullPosts() error {
 			return err
 		}
 	} else {
-		cmd := exec.Command("git", "pull")
-		cmd.Dir = postsDir
-
-		err := cmd.Run()
+		repository, err := git.PlainOpen(postsDir)
 		if err != nil {
-			return fmt.Errorf("error pulling posts: %w", err)
+			return fmt.Errorf("open posts repository: %w", err)
+		}
+		worktree, err := repository.Worktree()
+		if err != nil {
+			return fmt.Errorf("open posts worktree: %w", err)
+		}
+		err = worktree.Pull(&git.PullOptions{RemoteName: "origin", Auth: auth, Progress: os.Stdout})
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			return fmt.Errorf("pull posts: %w", err)
 		}
 	}
 	return nil

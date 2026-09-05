@@ -14,7 +14,7 @@ Go application that builds and serves [blog.rasc.ch](https://blog.rasc.ch) from 
 
 ## Requirements
 
-- Go 1.26.4 or newer matching `go.mod`.
+- Go 1.27.1 or newer matching `go.mod`.
 - Node.js for `shiki/cli.js`.
 - Docker for local Meilisearch, Inbucket, and Mermaid rendering.
 - Taskfile is optional, but the common commands are defined in `Taskfile.yml`.
@@ -28,7 +28,7 @@ cd ../css_build && npm install
 
 ## Configuration
 
-The app reads `app.env` from the project root and also accepts environment variable overrides with the `GOLB_` prefix. Dots in config keys become underscores, for example `GOLB_HTTP_PORT=localhost:8080` and `GOLB_BLOG_POSTDIR=./posts`.
+The app reads `app.env` from the project root when present and also accepts environment variables with the `GOLB_` prefix, so an environment-only deployment is supported. Dots in config keys become underscores, for example `GOLB_HTTP_PORT=localhost:8080` and `GOLB_BLOG_POSTDIR=./posts`.
 
 Important keys:
 
@@ -74,12 +74,16 @@ Useful commands:
 
 ```sh
 task tidy              # go fmt and go mod tidy
+task test              # run the Go test suite
 task audit             # go vet, staticcheck, go mod verify
 task build             # build the blog binary
 task build-linux-amd64 # cross-compile for Linux amd64
 go run gitblog/cmd/blog index  # rebuild the Meilisearch index
+go run gitblog/cmd/blog rebuild # force regeneration of all HTML, feeds, sitemap, and the search index
 go run gitblog/cmd/blog report # run the broken-link report
 ```
+
+The server exposes `GET /healthz` for process-level health checks.
 
 ## Post Format
 

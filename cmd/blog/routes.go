@@ -11,14 +11,13 @@ import (
 
 func (app *application) routes() http.Handler {
 	mux := chi.NewRouter()
-	mux.Use(middleware.RealIP)
-
 	mux.Use(app.recoverPanic)
 	mux.Use(middleware.NoCache)
 
-	mux.Post("/githubCallback", app.githubCallbackHandler)
-	mux.Post("/submitFeedback", app.submitFeedbackHandler)
+	mux.With(middleware.RequestSize(1<<20)).Post("/githubCallback", app.githubCallbackHandler)
+	mux.With(middleware.RequestSize(64<<10)).Post("/submitFeedback", app.submitFeedbackHandler)
 	mux.Get("/feedback/{url}", app.feedbackHandler)
+	mux.Get("/healthz", app.healthHandler)
 	mux.Get("/", app.indexHandler)
 	mux.Get("/index.html", app.indexHandler)
 
@@ -30,8 +29,7 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 		defer func() {
 			err := recover()
 			if err != nil {
-				app.reportServerError(r, fmt.Errorf("%s", err))
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				app.serverError(w, r, fmt.Errorf("panic: %v", err))
 			}
 		}()
 

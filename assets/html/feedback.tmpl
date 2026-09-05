@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ralph's Blog: Feedback</title>
+<title>{{ .SiteTitle }}: Feedback</title>
 <link rel="stylesheet" href="/assets/blog-9.css">
 <style>
     .specialfield {
@@ -20,7 +20,7 @@
 <body>
 
   <header>
-    <h1>Ralph's Blog</h1>
+    <h1>{{ .SiteTitle }}</h1>
     <p class="indexsubtitle">Send some feedback</p>
   </header>
 
@@ -30,9 +30,10 @@
 	  	 <input type="hidden" name="url" value="{{ .PostURL }}">
 	  	 <input type="hidden" name="token" value="{{ .Token }}">
 
-	  	 <textarea name="feedback"></textarea>
-	  	 <label for="email">Email (optional, provide one when you expect a response)</label>
-  		 <input class="textfield" type="text" name="email"><br>
+		 <label for="feedback">Feedback</label>
+		 <textarea id="feedback" name="feedback" required maxlength="20000"></textarea>
+		 <label for="email">Email (optional, provide one when you expect a response)</label>
+		 <input class="textfield" type="email" id="email" name="email" maxlength="320"><br>
   		 <input class="specialfield" autocomplete="off" type="text" id="name" name="name">
 	  	 <br>
 	  	 <input type="submit" value="Submit Feedback">
