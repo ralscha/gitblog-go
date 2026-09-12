@@ -2,6 +2,8 @@ package main
 
 import (
 	"cmp"
+	"context"
+	"crypto/rand"
 	"fmt"
 	"slices"
 	"strconv"
@@ -18,6 +20,7 @@ const (
 
 type SearchService struct {
 	client         meilisearch.ServiceManager
+	indexMu        sync.Mutex
 	yearsMu        sync.RWMutex
 	publishedYears []int
 }
@@ -36,6 +39,7 @@ type Document struct {
 
 func NewSearchService(config Config) (*SearchService, error) {
 	c := meilisearch.New(config.Meilisearch.Host, meilisearch.WithAPIKey(config.Meilisearch.Key))
+	s := &SearchService{client: c}
 
 	index := c.Index(IndexName)
 
@@ -44,8 +48,7 @@ func NewSearchService(config Config) (*SearchService, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = index.WaitForTask(task.TaskUID, 5*time.Second)
-	if err != nil {
+	if err := s.waitForTask(task.TaskUID); err != nil {
 		return nil, err
 	}
 
@@ -110,29 +113,22 @@ func unique(intSlice []int) []int {
 }
 
 func (s *SearchService) waitForTask(taskUID int64) error {
-	_, err := s.client.Index(IndexName).WaitForTask(taskUID, 5*time.Second)
-	return err
-}
-
-func (s *SearchService) DeleteAll() error {
-	task, err := s.client.Index(IndexName).DeleteAllDocuments(nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	task, err := s.client.WaitForTaskWithContext(ctx, taskUID, 100*time.Millisecond)
 	if err != nil {
-		return err
+		return fmt.Errorf("wait for search task %d: %w", taskUID, err)
 	}
-	if err := s.waitForTask(task.TaskUID); err != nil {
-		return err
+	if task.Status != meilisearch.TaskStatusSucceeded {
+		return fmt.Errorf("search task %d %s: %s (%s)", taskUID, task.Status, task.Error.Message, task.Error.Code)
 	}
-
-	s.setPublishedYears(nil)
-
 	return nil
 }
 
-func (s *SearchService) IndexPosts(posts []PostMetadata) error {
-	if len(posts) == 0 {
-		s.setPublishedYears(nil)
-		return nil
-	}
+// IndexPosts replaces the complete index only after its replacement is ready.
+func (s *SearchService) IndexPosts(posts []PostMetadata) (resultErr error) {
+	s.indexMu.Lock()
+	defer s.indexMu.Unlock()
 
 	documents := make([]Document, len(posts))
 	publishedYears := make([]int, 0, len(posts))
@@ -166,7 +162,46 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) error {
 		}
 	}
 
-	task, err := s.client.Index(IndexName).AddDocuments(documents, nil)
+	settings, err := s.client.Index(IndexName).GetSettings()
+	if err != nil {
+		return err
+	}
+	stagingName := IndexName + "_build_" + rand.Text()
+	task, err := s.client.CreateIndex(&meilisearch.IndexConfig{Uid: stagingName, PrimaryKey: "id"})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		// After a swap this name holds the retired index; before it, the failed build.
+		task, err := s.client.DeleteIndex(stagingName)
+		if err == nil {
+			err = s.waitForTask(task.TaskUID)
+		}
+		if resultErr == nil && err != nil {
+			resultErr = fmt.Errorf("remove temporary search index: %w", err)
+		}
+	}()
+	if err := s.waitForTask(task.TaskUID); err != nil {
+		return err
+	}
+	staging := s.client.Index(stagingName)
+	task, err = staging.UpdateSettings(settings)
+	if err != nil {
+		return err
+	}
+	if err := s.waitForTask(task.TaskUID); err != nil {
+		return err
+	}
+	if len(documents) > 0 {
+		task, err = staging.AddDocuments(documents, nil)
+		if err != nil {
+			return err
+		}
+		if err := s.waitForTask(task.TaskUID); err != nil {
+			return err
+		}
+	}
+	task, err = s.client.SwapIndexes([]*meilisearch.SwapIndexesParams{{Indexes: []string{IndexName, stagingName}}})
 	if err != nil {
 		return err
 	}

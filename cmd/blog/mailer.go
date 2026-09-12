@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/wneessen/go-mail"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -14,12 +15,22 @@ type Mailer struct {
 	from   string
 }
 
-func NewMailer(host string, port int, username, password, from string) (*Mailer, error) {
+func NewMailer(host string, port int, username, password, from, tlsPolicy string) (*Mailer, error) {
 	if username == "" && password != "" {
 		return nil, fmt.Errorf("SMTP password is configured without a username")
 	}
 
 	options := []mail.Option{mail.WithTimeout(defaultTimeout), mail.WithPort(port)}
+	switch strings.ToLower(strings.TrimSpace(tlsPolicy)) {
+	case "", "mandatory":
+		options = append(options, mail.WithTLSPolicy(mail.TLSMandatory))
+	case "opportunistic":
+		options = append(options, mail.WithTLSPolicy(mail.TLSOpportunistic))
+	case "none":
+		options = append(options, mail.WithTLSPolicy(mail.NoTLS))
+	default:
+		return nil, fmt.Errorf("invalid SMTP TLS policy %q (expected mandatory, opportunistic, or none)", tlsPolicy)
+	}
 	if username == "" {
 		options = append(options, mail.WithSMTPAuth(mail.SMTPAuthNoAuth))
 	} else {

@@ -37,6 +37,7 @@ Important keys:
 http.port=localhost:8080
 smtp.host=localhost
 smtp.port=2500
+smtp.tlsPolicy=none
 smtp.sender=me@example.com
 
 github.url=git@github.com:owner/posts.git
@@ -55,6 +56,12 @@ meilisearch.key=MASTER_KEY
 ```
 
 `blog.url` may be configured with or without a trailing slash.
+
+`github.privateKey` is used for SSH URLs. Public HTTPS and local repository URLs do not need an SSH key. The posts directory may be absent or empty for the first clone; an existing nonempty directory must be a Git checkout. For SSH, the service account also needs a trusted host entry in its `known_hosts` file.
+
+Set `github.webhookSecret` to the same nonempty secret configured in GitHub. The callback returns HTTP 503 when this setting is empty.
+
+`smtp.tlsPolicy` defaults to `mandatory` (STARTTLS required). Use `none` for the local Inbucket service; `opportunistic` is also supported for servers where TLS is optional. The checked-in development configuration uses `none`; configure the appropriate policy for your production SMTP server.
 
 ## Local Development
 
@@ -85,6 +92,8 @@ go run gitblog/cmd/blog report # run the broken-link report
 
 The server exposes `GET /healthz` for process-level health checks.
 
+The Go server handles dynamic routes. Run Caddy with the supplied `caddyfile` to serve generated posts, images, stylesheets, and feeds as well. Static assets, including `assets/blog-9.css` and its fonts, must be present in the posts checkout.
+
 ## Post Format
 
 Posts are Markdown files in `blog.postDir` with YAML front matter:
@@ -110,3 +119,8 @@ Draft posts are skipped. `DRAFT.md` files are ignored.
 `caddyfile` serves generated files from `posts`, uses precompressed Brotli/gzip assets, hides Markdown and `.git` files, and reverse proxies the dynamic routes to the Go server on `localhost:8080`.
 
 The GitHub webhook endpoint is `POST /githubCallback`. Push events trigger a background refresh of posts, feeds, sitemap, and search index.
+
+Each refresh retries publication even if the Markdown has not changed, and repairs missing or stale compressed pages. Search replacements are built in temporary `posts_build_*` indexes and swapped into `posts` after successful indexing. The Meilisearch API key must permit index creation/deletion, settings, documents, tasks, and index swaps for both names. Allow space for two copies of the index during publication. Run only one publishing process against a posts checkout at a time.
+
+After changing templates or the syntax highlighter, run `rebuild` once to regenerate existing HTML. Restarting alone only converts Markdown that has changed.
+

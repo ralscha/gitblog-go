@@ -3,5 +3,6 @@ meili_data
 posts
 node_modules
 /blog.exe
+/.review/
 caddy_windows_amd64.exe
 .agents

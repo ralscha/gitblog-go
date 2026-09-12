@@ -13,6 +13,11 @@ import (
 )
 
 func (app *application) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
+	if strings.TrimSpace(app.config.Github.WebhookSecret) == "" {
+		app.logger.Warn("GitHub webhook is disabled: no secret configured")
+		clientError(w, http.StatusServiceUnavailable)
+		return
+	}
 
 	payload, err := github.ValidatePayload(r, []byte(app.config.Github.WebhookSecret))
 	if err != nil {

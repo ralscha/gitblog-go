@@ -200,7 +200,23 @@ func (app *application) convertChangedMarkdowns() (bool, error) {
 			}
 		} else {
 			if htmlFileInfo.ModTime().After(markdownFileInfo.ModTime()) {
-				// html file is newer, skip conversion
+				// A failed compression step must not leave stale variants served
+				// indefinitely just because the HTML itself is already current.
+				for _, variant := range []struct {
+					suffix   string
+					compress func(string) error
+				}{{".gz", compressFileWithGzip}, {".br", compressFileWithBrotli}} {
+					info, err := os.Stat(htmlFile + variant.suffix)
+					if err != nil && !os.IsNotExist(err) {
+						return false, err
+					}
+					if err != nil || info.ModTime().Before(htmlFileInfo.ModTime()) {
+						if err := variant.compress(htmlFile); err != nil {
+							return false, err
+						}
+						changed = true
+					}
+				}
 				continue
 			}
 		}

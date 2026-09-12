@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 )
 
@@ -16,11 +17,24 @@ func (app *application) pullPosts() error {
 		newDir = true
 	} else if err != nil {
 		return fmt.Errorf("inspect posts directory: %w", err)
+	} else {
+		entries, err := os.ReadDir(postsDir)
+		if err != nil {
+			return fmt.Errorf("read posts directory: %w", err)
+		}
+		newDir = len(entries) == 0
 	}
 
-	auth, err := ssh.NewPublicKeysFromFile("git", app.config.Github.PrivateKey, "")
+	endpoint, err := transport.NewEndpoint(app.config.Github.URL)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse posts repository URL: %w", err)
+	}
+	var auth transport.AuthMethod
+	if endpoint.Protocol == "ssh" && app.config.Github.PrivateKey != "" {
+		auth, err = ssh.NewPublicKeysFromFile(endpoint.User, app.config.Github.PrivateKey, "")
+		if err != nil {
+			return fmt.Errorf("load posts SSH key: %w", err)
+		}
 	}
 
 	if newDir {

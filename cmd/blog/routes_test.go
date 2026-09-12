@@ -70,3 +70,16 @@ func TestGitHubWebhookRejectsMissingSignature(t *testing.T) {
 		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
 	}
 }
+
+func TestGitHubWebhookDisabledWithoutSecret(t *testing.T) {
+	app := &application{logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	request := httptest.NewRequest(http.MethodPost, "/githubCallback", strings.NewReader(`{}`))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-GitHub-Event", "push")
+	recorder := httptest.NewRecorder()
+	app.routes().ServeHTTP(recorder, request)
+	app.wg.Wait()
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("unconfigured webhook accepted a request: %d", recorder.Code)
+	}
+}

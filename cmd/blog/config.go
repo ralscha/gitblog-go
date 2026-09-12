@@ -16,11 +16,12 @@ type Config struct {
 		DefaultShutdownPeriodInSeconds int64
 	}
 	SMTP struct {
-		Host     string
-		Port     int
-		Username string
-		Password string
-		Sender   string
+		Host      string
+		Port      int
+		Username  string
+		Password  string
+		Sender    string
+		TLSPolicy string
 	}
 	Github struct {
 		URL           string
@@ -46,6 +47,7 @@ func applyDefaults(v *viper.Viper) {
 	v.SetDefault("http.writeTimeoutInSeconds", 10)
 	v.SetDefault("http.idleTimeoutInSeconds", 60)
 	v.SetDefault("http.defaultShutdownPeriodInSeconds", 30)
+	v.SetDefault("smtp.tlsPolicy", "mandatory")
 }
 
 func LoadConfig() (Config, error) {
@@ -76,6 +78,7 @@ func LoadConfig() (Config, error) {
 		"smtp.username",
 		"smtp.password",
 		"smtp.sender",
+		"smtp.tlsPolicy",
 		"github.url",
 		"github.webhookSecret",
 		"github.privateKey",

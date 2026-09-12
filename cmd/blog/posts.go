@@ -1,12 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,21 +24,19 @@ func (app *application) updatePosts() error {
 		return fmt.Errorf("failed to validate posts: %w", err)
 	}
 
-	convertChanged, err := app.convertChangedMarkdowns()
+	_, err = app.convertChangedMarkdowns()
 	if err != nil {
 		return fmt.Errorf("failed to convert markdowns: %w", err)
 	}
 
-	cleanupChanged, err := app.cleanup()
+	_, err = app.cleanup()
 	if err != nil {
 		return fmt.Errorf("failed to cleanup: %w", err)
 	}
 
-	if convertChanged || cleanupChanged {
-		return app.publishPosts()
-	}
-
-	return nil
+	// Retry publication even when HTML is current: a previous attempt may have
+	// failed after conversion, or the search database may have been recreated.
+	return app.publishPosts()
 }
 
 func (app *application) rebuildPosts() error {
@@ -68,9 +68,6 @@ func (app *application) publishPosts() error {
 		return err
 	}
 	if err := app.writeSitemap(postMetadata); err != nil {
-		return err
-	}
-	if err := app.searchService.DeleteAll(); err != nil {
 		return err
 	}
 	return app.searchService.IndexPosts(postMetadata)
@@ -170,9 +167,24 @@ func validatePostHeader(header PostHeader, markdownFile string) (time.Time, time
 }
 
 func (app *application) cleanup() (bool, error) {
+	// HTML tracked in Git is authored content (for example an embedded demo),
+	// not orphaned output from a deleted Markdown post.
+	tracked := make(map[string]bool)
+	repository, err := git.PlainOpen(app.config.Blog.PostDir)
+	if err == nil {
+		index, err := repository.Storer.Index()
+		if err != nil {
+			return false, fmt.Errorf("read posts Git index: %w", err)
+		}
+		for _, entry := range index.Entries {
+			tracked[filepath.Join(app.config.Blog.PostDir, filepath.FromSlash(entry.Name))] = true
+		}
+	} else if !errors.Is(err, git.ErrRepositoryNotExists) {
+		return false, fmt.Errorf("open posts repository for cleanup: %w", err)
+	}
 	htmlFiles := make(map[string]struct{})
 
-	err := filepath.Walk(app.config.Blog.PostDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(app.config.Blog.PostDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("error walking directory: %w", err)
 		}
@@ -209,6 +221,9 @@ func (app *application) cleanup() (bool, error) {
 		if err != nil {
 			if !os.IsNotExist(err) {
 				return false, fmt.Errorf("failed to get markdown file info: %w", err)
+			}
+			if tracked[htmlFile] || tracked[htmlFile+".gz"] || tracked[htmlFile+".br"] {
+				continue
 			}
 
 			removed, err := removeGeneratedHTML(htmlFile)

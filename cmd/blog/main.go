@@ -73,7 +73,8 @@ func runServer(logger *slog.Logger) error {
 		cfg.SMTP.Port,
 		cfg.SMTP.Username,
 		cfg.SMTP.Password,
-		cfg.SMTP.Sender)
+		cfg.SMTP.Sender,
+		cfg.SMTP.TLSPolicy)
 	if err != nil {
 		return err
 	}
@@ -224,12 +225,6 @@ func loadTemplates() (map[string]*template.Template, error) {
 func (app *application) indexAllPosts() error {
 	app.logger.Info("reading all posts metadata from files")
 	postMetadatas, err := app.readAllMetadata()
-	if err != nil {
-		return err
-	}
-
-	app.logger.Info("deleting all documents from search index")
-	err = app.searchService.DeleteAll()
 	if err != nil {
 		return err
 	}

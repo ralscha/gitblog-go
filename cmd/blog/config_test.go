@@ -21,4 +21,7 @@ func TestLoadConfigAppliesDefaultsAndEnvironmentOverrides(t *testing.T) {
 	if cfg.Blog.Title != "Test Blog" {
 		t.Fatalf("Blog.Title = %q", cfg.Blog.Title)
 	}
+	if cfg.SMTP.TLSPolicy != "mandatory" {
+		t.Fatalf("SMTP TLS default = %q", cfg.SMTP.TLSPolicy)
+	}
 }
