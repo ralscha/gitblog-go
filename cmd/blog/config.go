@@ -33,7 +33,6 @@ type Config struct {
 		Author      string
 		Description string
 		URL         string
-		Shikicli    string
 		Secret      string
 	}
 	Meilisearch struct {
@@ -85,7 +84,6 @@ func LoadConfig() (Config, error) {
 		"blog.author",
 		"blog.description",
 		"blog.url",
-		"blog.shikicli",
 		"blog.secret",
 		"meilisearch.host",
 		"meilisearch.key",

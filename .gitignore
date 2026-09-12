@@ -4,3 +4,4 @@ posts
 node_modules
 /blog.exe
 caddy_windows_amd64.exe
+.agents

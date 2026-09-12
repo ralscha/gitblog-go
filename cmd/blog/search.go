@@ -28,8 +28,8 @@ type Document struct {
 	Summary       string   `json:"summary"`
 	Title         string   `json:"title"`
 	URL           string   `json:"url"`
-	PublishedTs   int64    `json:"publishedTs"`
-	UpdatedTs     int64    `json:"updatedTs"`
+	PublishedTS   int64    `json:"publishedTs"`
+	UpdatedTS     int64    `json:"updatedTs"`
 	PublishedYear int      `json:"publishedYear"`
 	Tags          []string `json:"tags"`
 }
@@ -159,8 +159,8 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) error {
 			Summary:       post.Summary,
 			Title:         post.Title,
 			URL:           post.URL,
-			PublishedTs:   publishedTime.Unix(),
-			UpdatedTs:     updatedSeconds,
+			PublishedTS:   publishedTime.Unix(),
+			UpdatedTS:     updatedSeconds,
 			PublishedYear: publishedYear,
 			Tags:          post.Tags,
 		}
@@ -253,12 +253,12 @@ func mapToPostMetadata(response *meilisearch.SearchResponse) ([]PostMetadata, er
 		published := ""
 		updated := ""
 		var publishedTS time.Time
-		if document.PublishedTs != 0 {
-			publishedTS = time.Unix(document.PublishedTs, 0)
+		if document.PublishedTS != 0 {
+			publishedTS = time.Unix(document.PublishedTS, 0)
 			published = publishedTS.Format("2. January 2006")
 		}
-		if document.UpdatedTs != 0 {
-			updatedTime := time.Unix(document.UpdatedTs, 0)
+		if document.UpdatedTS != 0 {
+			updatedTime := time.Unix(document.UpdatedTS, 0)
 			updated = updatedTime.Format("2. January 2006")
 		}
 

@@ -15,15 +15,16 @@ Go application that builds and serves [blog.rasc.ch](https://blog.rasc.ch) from 
 ## Requirements
 
 - Go 1.27.1 or newer matching `go.mod`.
-- Node.js for `shiki/cli.js`.
+- Node.js and npm only when rebuilding the CSS assets.
 - Docker for local Meilisearch, Inbucket, and Mermaid rendering.
 - Taskfile is optional, but the common commands are defined in `Taskfile.yml`.
 
-Install Node dependencies when setting up a fresh checkout:
+Syntax highlighting uses [shiki-go](https://github.com/ralscha/shiki-go) in the Go process, with embedded grammars and the `one-light` / `one-dark-pro` themes. Running the blog does not require Node.js or a separate highlighting CLI.
+
+Install Node dependencies if you need to rebuild the CSS assets:
 
 ```sh
-cd shiki && npm install
-cd ../css_build && npm install
+cd css_build && npm install
 ```
 
 ## Configuration
@@ -48,7 +49,6 @@ blog.url=http://localhost:8080
 blog.title=My Blog
 blog.description=My Blog
 blog.author=me
-blog.shikicli=shiki/cli.js
 
 meilisearch.host=http://127.0.0.1:7799
 meilisearch.key=MASTER_KEY

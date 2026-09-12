@@ -6,7 +6,6 @@ import (
 	"golang.org/x/net/html"
 	htmltemplate "html/template"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -125,118 +124,6 @@ func addTargetBlankToLinks(htmlStr string) (string, error) {
 	return b.String(), nil
 }
 
-func (app *application) shiki(htmlContent string) (string, error) {
-	doc, err := html.Parse(strings.NewReader(htmlContent))
-	if err != nil {
-		return "", err
-	}
-
-	var f func(*html.Node) error
-	f = func(n *html.Node) error {
-		if n.Type == html.ElementNode && n.Data == "code" {
-			for _, a := range n.Attr {
-				if strings.HasPrefix(a.Key, "class") && strings.Contains(a.Val, "language-") {
-					lang := "markup"
-					classes := strings.FieldsSeq(a.Val)
-					for cl := range classes {
-						if after, ok := strings.CutPrefix(cl, "language-"); ok {
-							lang = after
-							break
-						}
-					}
-
-					code, err := app.runShiki(lang, nodeText(n))
-					if err != nil {
-						return err
-					}
-					codeNode, err := html.ParseFragment(strings.NewReader(code), n)
-					if err != nil {
-						return err
-					}
-
-					n.FirstChild = nil
-					n.LastChild = nil
-					for _, c := range codeNode {
-						n.AppendChild(c)
-					}
-				}
-			}
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			err := f(c)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	err = f(doc)
-	if err != nil {
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	if err := html.Render(&buf, doc); err != nil {
-		return "", err
-	}
-
-	cleaned, err := cleanupShikiOutput(buf.String())
-	if err != nil {
-		return "", fmt.Errorf("failed to cleanup shiki output: %w", err)
-	}
-
-	return cleaned, nil
-}
-
-func cleanupShikiOutput(htmlContent string) (string, error) {
-	doc, err := html.Parse(strings.NewReader(htmlContent))
-	if err != nil {
-		return "", err
-	}
-
-	extract := func(n *html.Node) *html.Node {
-		if n.Type == html.ElementNode {
-			if n.Data == "pre" {
-				// Check if this pre contains a code that contains a shiki pre
-				if code := findFirstChild(n, "code"); code != nil {
-					if shikiPre := findFirstChild(code, "pre"); shikiPre != nil {
-						if hasShikiClass(shikiPre) {
-							return shikiPre
-						}
-					}
-				}
-			}
-		}
-		return nil
-	}
-
-	var f func(*html.Node)
-	f = func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "pre" {
-			if replacement := extract(n); replacement != nil {
-				// Replace the current node's attributes and children with the shiki pre
-				n.Attr = replacement.Attr
-				n.FirstChild = replacement.FirstChild
-				n.LastChild = replacement.LastChild
-			}
-		}
-
-		// Continue traversing
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			f(c)
-		}
-	}
-	f(doc)
-
-	var buf bytes.Buffer
-	if err := html.Render(&buf, doc); err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
-}
-
 func hasExternalHref(n *html.Node) bool {
 	for _, attr := range n.Attr {
 		if attr.Key == "href" {
@@ -278,57 +165,6 @@ func findFirstChild(n *html.Node, tag string) *html.Node {
 		}
 	}
 	return nil
-}
-
-func hasShikiClass(n *html.Node) bool {
-	for _, attr := range n.Attr {
-		if attr.Key == "class" && strings.Contains(attr.Val, "shiki") {
-			return true
-		}
-	}
-	return false
-}
-
-func (app *application) runShiki(language, code string) (string, error) {
-	codeTmp, err := os.CreateTemp("", "code")
-	if err != nil {
-		return "", fmt.Errorf("failed to create tmp file: %w", err)
-	}
-	codePath := codeTmp.Name()
-	defer func() { _ = os.Remove(codePath) }()
-	if _, err := codeTmp.WriteString(code); err != nil {
-		_ = codeTmp.Close()
-		return "", fmt.Errorf("failed to write code to tmp file: %w", err)
-	}
-	if err := codeTmp.Close(); err != nil {
-		return "", fmt.Errorf("failed to close code tmp file: %w", err)
-	}
-
-	outTmp, err := os.CreateTemp("", "out")
-	if err != nil {
-		return "", fmt.Errorf("failed to create output tmp file: %w", err)
-	}
-	outPath := outTmp.Name()
-	defer func() { _ = os.Remove(outPath) }()
-	if err := outTmp.Close(); err != nil {
-		return "", fmt.Errorf("failed to close output tmp file: %w", err)
-	}
-
-	cmd := exec.Command("node", app.config.Blog.Shikicli, codePath, outPath, language)
-	commandOutput, err := cmd.CombinedOutput()
-	if err != nil {
-		if app.logger != nil {
-			app.logger.Warn("Shiki highlighting failed; using plain code", "error", err, "output", string(commandOutput))
-		}
-		return fmt.Sprintf(`<pre class="shiki"><code>%s</code></pre>`, html.EscapeString(code)), nil
-	}
-
-	content, err := os.ReadFile(outPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to read output tmp file: %w", err)
-	}
-
-	return string(content), nil
 }
 
 func (app *application) convertChangedMarkdowns() (bool, error) {

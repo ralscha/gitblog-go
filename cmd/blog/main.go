@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"codnect.io/chrono"
+	shiki "github.com/ralscha/shiki-go"
 	"github.com/speps/go-hashids/v2"
 )
 
@@ -54,6 +55,7 @@ type application struct {
 	taskScheduler     chrono.TaskScheduler
 	gitHubCodeService *GitHubCodeService
 	markdownService   *MarkdownService
+	highlighter       *shiki.Highlighter
 	searchService     *SearchService
 	hashID            *hashids.HashID
 	wg                sync.WaitGroup
@@ -93,12 +95,19 @@ func runServer(logger *slog.Logger) error {
 		return err
 	}
 
+	highlighter, err := newHighlighter()
+	if err != nil {
+		return fmt.Errorf("initialize syntax highlighter: %w", err)
+	}
+	defer func() { _ = highlighter.Close() }()
+
 	app := &application{
 		config:            cfg,
 		logger:            logger,
 		mailer:            mailer,
 		gitHubCodeService: NewGitHubCodeService(),
 		markdownService:   NewMarkdownService(),
+		highlighter:       highlighter,
 		searchService:     searchService,
 		hashID:            hi,
 		taskScheduler:     chrono.NewDefaultTaskScheduler(),
@@ -176,11 +185,18 @@ func runRebuild(logger *slog.Logger) error {
 		return err
 	}
 
+	highlighter, err := newHighlighter()
+	if err != nil {
+		return fmt.Errorf("initialize syntax highlighter: %w", err)
+	}
+	defer func() { _ = highlighter.Close() }()
+
 	app := &application{
 		config:            cfg,
 		logger:            logger,
 		gitHubCodeService: NewGitHubCodeService(),
 		markdownService:   NewMarkdownService(),
+		highlighter:       highlighter,
 		searchService:     searchService,
 		templates:         templates,
 	}
