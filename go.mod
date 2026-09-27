@@ -4,7 +4,7 @@ go 1.27.1
 
 require (
 	codnect.io/chrono v1.1.3
-	github.com/andybalholm/brotli v1.2.4
+	github.com/andybalholm/brotli v1.2.5
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/google/go-github/v57 v57.0.0
@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/meilisearch/meilisearch-go v0.36.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/ralscha/shiki-go v1.0.0
+	github.com/ralscha/shiki-go v1.0.1
 	github.com/sabloger/sitemap-generator v1.3.0
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.21.0
