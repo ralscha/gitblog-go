@@ -1,18 +1,18 @@
 module gitblog
 
-go 1.27.1
+go 1.27.2
 
 require (
 	codnect.io/chrono v1.1.3
 	github.com/andybalholm/brotli v1.2.6
-	github.com/go-chi/chi/v5 v5.3.2
-	github.com/go-git/go-git/v5 v5.19.2
+	github.com/go-chi/chi/v5 v5.5.0
+	github.com/go-git/go-git/v5 v5.19.3
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/feeds v1.2.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/meilisearch/meilisearch-go v0.36.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/ralscha/shiki-go v1.0.1
+	github.com/ralscha/shiki-go v1.0.2
 	github.com/sabloger/sitemap-generator v1.3.0
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.21.0
@@ -21,13 +21,13 @@ require (
 	github.com/yuin/goldmark-emoji v1.0.6
 	go.abhg.dev/goldmark/anchor v0.2.0
 	go.abhg.dev/goldmark/mermaid v0.6.0
-	golang.org/x/net v0.59.0
+	golang.org/x/net v0.61.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
-	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/Microsoft/go-winio v0.6.4 // indirect
 	github.com/ProtonMail/go-crypto v1.5.2 // indirect
 	github.com/cloudflare/circl v1.6.5 // indirect
 	github.com/cyphar/filepath-securejoin v0.7.0 // indirect
@@ -54,8 +54,8 @@ require (
 	github.com/tetratelabs/wazero v1.12.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.57.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/crypto v0.58.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
