@@ -50,5 +50,5 @@ tasks:
   install:
     cmds:
       - git pull
-      - task: build
-      - systemctl restart gitblog-go
+      - go build -ldflags='-s' -o /opt/gitblog/blog gitblog/cmd/blog
+      - systemctl restart gitblog

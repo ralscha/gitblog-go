@@ -120,6 +120,8 @@ Draft posts are skipped. `DRAFT.md` files are ignored.
 
 ## Deployment Notes
 
+`task install` pulls the latest changes, builds the executable at `/opt/gitblog/blog`, and restarts the `gitblog` systemd service. Run it with permission to write to that directory and restart the service.
+
 `caddyfile` serves generated files from `posts`, uses precompressed Brotli/gzip assets, hides Markdown and `.git` files, and reverse proxies the dynamic routes to the Go server on `localhost:8080`.
 
 The GitHub webhook endpoint is `POST /githubCallback`. Push events trigger a background refresh of posts, feeds, sitemap, and search index.
