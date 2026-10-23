@@ -1,11 +1,11 @@
 services:
   meilisearch:
-    image: getmeili/meilisearch:v1.53.2
+    image: getmeili/meilisearch:v1.55.0
     ports:
       - "7799:7700"
     environment:
       - MEILI_MASTER_KEY=MASTER_KEY
-      - MEILI_EXPERIMENTAL_DUMPLESS_UPGRADE=1
+      - MEILI_UPGRADE_DB=true
     volumes:
       - ./meili_data:/meili_data
 

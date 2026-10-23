@@ -122,6 +122,16 @@ Draft posts are skipped. `DRAFT.md` files are ignored.
 
 `task install` pulls the latest changes, builds the executable at `/opt/gitblog/blog`, and restarts the `gitblog` systemd service. Run it with permission to write to that directory and restart the service.
 
+Docker Compose pins Meilisearch to [v1.55.0](https://github.com/meilisearch/meilisearch/releases/tag/v1.55.0). `MEILI_UPGRADE_DB=true` enables migration of an existing database on startup, replacing the old experimental setting. Before upgrading from v1.53.2, stop Meilisearch and back up `./meili_data`; then run:
+
+```sh
+docker compose pull meilisearch
+docker compose up -d meilisearch
+docker compose logs meilisearch
+```
+
+Keep the backup until the database upgrade task succeeds and searches work. See the [Meilisearch upgrade guide](https://www.meilisearch.com/docs/resources/migration/updating) for recovery options. The v1.54 dynamic-search-rule API changes and v1.55 vector-quantization restrictions do not affect this blog's keyword, tag, and year searches.
+
 `caddyfile` serves generated files from `posts`, uses precompressed Brotli/gzip assets, hides Markdown and `.git` files, and reverse proxies the dynamic routes to the Go server on `localhost:8080`.
 
 The GitHub webhook endpoint is `POST /githubCallback`. Push events trigger a background refresh of posts, feeds, sitemap, and search index.
