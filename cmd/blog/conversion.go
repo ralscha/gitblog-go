@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-var headerPattern = regexp.MustCompile(`(?s)\A---\r?\n(.*?)\r?\n---\r?\n?(.*)\z`)
+var headerPattern = regexp.MustCompile(`(?s)\A---[\t ]*\r?\n(.*?)\r?\n---[\t ]*(?:\r?\n(.*)|\z)`)
 
 func (app *application) convert(markdownFile string) error {
 	header, body, err := readPostSource(markdownFile)

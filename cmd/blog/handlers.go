@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/go-github/v57/github"
+	"github.com/google/go-github/v89/github"
 )
 
 func (app *application) githubCallbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +22,11 @@ func (app *application) githubCallbackHandler(w http.ResponseWriter, r *http.Req
 	payload, err := github.ValidatePayload(r, []byte(app.config.Github.WebhookSecret))
 	if err != nil {
 		app.logger.Warn("rejected GitHub webhook", "error", err)
-		clientError(w, http.StatusUnauthorized)
+		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+			clientError(w, http.StatusRequestEntityTooLarge)
+		} else {
+			clientError(w, http.StatusUnauthorized)
+		}
 		return
 	}
 	event, err := github.ParseWebHook(github.WebHookType(r), payload)

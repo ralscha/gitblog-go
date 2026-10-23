@@ -7,7 +7,7 @@ require (
 	github.com/andybalholm/brotli v1.2.6
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.19.3
-	github.com/google/go-github/v57 v57.0.0
+	github.com/google/go-github/v89 v89.0.0
 	github.com/gorilla/feeds v1.2.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/meilisearch/meilisearch-go v0.36.3
@@ -21,8 +21,8 @@ require (
 	github.com/yuin/goldmark-emoji v1.0.6
 	go.abhg.dev/goldmark/anchor v0.2.0
 	go.abhg.dev/goldmark/mermaid v0.6.0
+	go.yaml.in/yaml/v3 v3.0.5
 	golang.org/x/net v0.61.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -53,7 +53,6 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tetratelabs/wazero v1.12.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect

@@ -36,14 +36,17 @@ func (app *application) serveHTTP() error {
 
 	app.logger.Info("starting server", slog.Group("server", "addr", srv.Addr))
 
-	err := srv.ListenAndServe()
-	if !errors.Is(err, http.ErrServerClosed) {
-		return err
+	serveErr := srv.ListenAndServe()
+	// A bind/listener failure must also finish cleanup before runServer closes
+	// shared resources such as the syntax highlighter.
+	stop()
+	shutdownErr := <-shutdownErrorChan
+	if !errors.Is(serveErr, http.ErrServerClosed) {
+		return errors.Join(serveErr, shutdownErr)
 	}
 
-	err = <-shutdownErrorChan
-	if err != nil {
-		return err
+	if shutdownErr != nil {
+		return shutdownErr
 	}
 
 	app.logger.Info("stopped server", slog.Group("server", "addr", srv.Addr))
@@ -56,6 +59,7 @@ func (app *application) shutdown(ctx context.Context, srv *http.Server) error {
 	scheduled := app.taskScheduler.Shutdown()
 	// Stop accepting HTTP work before waiting for jobs such as the link report.
 	if err := srv.Shutdown(ctx); err != nil {
+		_ = srv.Close()
 		return err
 	}
 	app.logger.Info("completing background tasks")

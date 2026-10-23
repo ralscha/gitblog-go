@@ -52,7 +52,7 @@
 	<tr>
 		<td><a href="/{{ .Post }}">{{ .Post }}</a></td>
 		<td>{{ .URL }}</td>
-		<td>{{ .Status }}</td>
+		<td>{{ if .Error }}{{ .Error }}{{ else }}{{ .Status }}{{ end }}</td>
 		<td>{{ if .Location }}{{ .Location }}{{ end }}</td>
 	</tr>
 	{{ end }}

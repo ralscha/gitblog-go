@@ -8,7 +8,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,50 +37,12 @@ func (app *application) checkBrokenLinks() error {
 		},
 	}
 
-	checkedUrls := make(map[string]struct{})
-	failedDomains := make(map[string]struct{})
+	seen := make(map[string]struct{})
+	var targets []URLCheck
 	var urlChecks []URLCheck
 
-	// Collect all unique URLs from posts
-	allUniqueUrls := make(map[string]struct{})
-	for _, post := range posts {
-		htmlFile := siblingPath(post.MarkdownFile, "html")
-		htmlContent, err := os.ReadFile(htmlFile)
-		if err != nil {
-			continue
-		}
-
-		links, err := collectLinks(string(htmlContent))
-		if err != nil {
-			continue
-		}
-
-		for _, link := range links {
-			ignore := false
-			linkLower := strings.ToLower(link)
-			for _, ignoreURL := range ignoreURLs {
-				if strings.HasPrefix(linkLower, ignoreURL) {
-					ignore = true
-					break
-				}
-			}
-			if ignore {
-				continue
-			}
-
-			if strings.HasPrefix(link, "http://") || strings.HasPrefix(link, "https://") {
-				cleanedUpLink := removeFragment(link)
-				allUniqueUrls[cleanedUpLink] = struct{}{}
-			}
-		}
-	}
-
-	totalUrls := len(allUniqueUrls)
-	checkedCount := 0
-	lastReportedProgress := -1
-
-	app.logger.Info("collected links", "urls", totalUrls)
-
+	// Read each page once so publication cannot change the list between counting
+	// and checking. Keep the first referring post for each unique URL.
 	for _, post := range posts {
 		htmlFile := siblingPath(post.MarkdownFile, "html")
 		htmlContent, err := os.ReadFile(htmlFile)
@@ -107,91 +68,63 @@ func (app *application) checkBrokenLinks() error {
 				continue
 			}
 
-			if strings.HasPrefix(link, "http://") || strings.HasPrefix(link, "https://") {
+			if strings.HasPrefix(linkLower, "http://") || strings.HasPrefix(linkLower, "https://") {
 				cleanedUpLink := removeFragment(link)
-				if _, ok := checkedUrls[cleanedUpLink]; ok {
-					continue
+				if _, ok := seen[cleanedUpLink]; !ok {
+					seen[cleanedUpLink] = struct{}{}
+					targets = append(targets, URLCheck{URL: cleanedUpLink, Post: post.URL})
 				}
-
-				parsedURL, err := url.Parse(cleanedUpLink)
-				if err != nil {
-					app.logger.Error(err.Error())
-					continue
-				}
-				domain := parsedURL.Host
-
-				// Skip if this domain has already failed with "no such host"
-				if _, ok := failedDomains[domain]; ok {
-					continue
-				}
-
-				checkedCount++
-				progress := (checkedCount * 100) / totalUrls
-				if progress >= lastReportedProgress+10 {
-					app.logger.Info("link-check progress", "percent", progress, "checked", checkedCount, "total", totalUrls)
-					lastReportedProgress = progress
-				}
-
-				req, err := http.NewRequest("GET", cleanedUpLink, nil)
-				if err != nil {
-					app.logger.Error(err.Error())
-					continue
-				}
-
-				req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-				req.Header.Set("User-Agent", "gitblog-link-checker/1.0")
-
-				resp, err := httpClient.Do(req)
-				if err != nil {
-					if _, ok := errors.AsType[*net.DNSError](err); ok {
-						failedDomains[domain] = struct{}{}
-						app.logger.Error("domain lookup failed", "domain", domain, "error", err)
-					} else {
-						app.logger.Error(err.Error())
-					}
-					continue
-				}
-				func() {
-					defer func() {
-						_, _ = io.Copy(io.Discard, resp.Body)
-						_ = resp.Body.Close()
-					}()
-
-					checkedUrls[cleanedUpLink] = struct{}{}
-
-					if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-						return
-					}
-
-					if resp.StatusCode == 429 {
-						return
-					}
-
-					if resp.StatusCode >= 300 && resp.StatusCode <= 399 {
-						location := resp.Header.Get("Location")
-						urlCheck := URLCheck{
-							URL:      link,
-							Post:     post.URL,
-							Status:   resp.StatusCode,
-							Location: location,
-						}
-						urlChecks = append(urlChecks, urlCheck)
-					} else {
-						urlCheck := URLCheck{
-							URL:    link,
-							Post:   post.URL,
-							Status: resp.StatusCode,
-						}
-						urlChecks = append(urlChecks, urlCheck)
-					}
-				}()
 			}
 		}
 	}
 
+	lastReportedProgress := -1
+	app.logger.Info("collected links", "urls", len(targets))
+	failedDomains := make(map[string]string)
+	for i, target := range targets {
+		progress := ((i + 1) * 100) / len(targets)
+		if progress >= lastReportedProgress+10 {
+			app.logger.Info("link-check progress", "percent", progress, "checked", i+1, "total", len(targets))
+			lastReportedProgress = progress
+		}
+		req, err := http.NewRequest(http.MethodGet, target.URL, nil)
+		if err != nil {
+			target.Error = err.Error()
+			urlChecks = append(urlChecks, target)
+			continue
+		}
+		domain := req.URL.Hostname()
+		if message, ok := failedDomains[domain]; ok {
+			target.Error = message
+			urlChecks = append(urlChecks, target)
+			continue
+		}
+		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+		req.Header.Set("User-Agent", "gitblog-link-checker/1.0")
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			target.Error = err.Error()
+			if dnsErr, ok := errors.AsType[*net.DNSError](err); ok && dnsErr.IsNotFound {
+				failedDomains[domain] = dnsErr.Error()
+			}
+			urlChecks = append(urlChecks, target)
+			continue
+		}
+		// Drain small responses for connection reuse, without downloading large
+		// archives or other linked files just to inspect their status.
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 32<<10))
+		_ = resp.Body.Close()
+		if resp.StatusCode >= 200 && resp.StatusCode <= 299 || resp.StatusCode == http.StatusTooManyRequests {
+			continue
+		}
+		target.Status = resp.StatusCode
+		target.Location = resp.Header.Get("Location")
+		urlChecks = append(urlChecks, target)
+	}
+
 	if len(urlChecks) > 0 {
 		for _, urlCheck := range urlChecks {
-			app.logger.Warn("broken link", "url", urlCheck.URL, "status", urlCheck.Status)
+			app.logger.Warn("broken link", "url", urlCheck.URL, "status", urlCheck.Status, "error", urlCheck.Error)
 		}
 	} else {
 		app.logger.Info("no broken links found")

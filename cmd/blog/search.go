@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"net/http"
 	"slices"
 	"strconv"
 	"strings"
@@ -38,7 +39,10 @@ type Document struct {
 }
 
 func NewSearchService(config Config) (*SearchService, error) {
-	c := meilisearch.New(config.Meilisearch.Host, meilisearch.WithAPIKey(config.Meilisearch.Key))
+	c := meilisearch.New(config.Meilisearch.Host,
+		meilisearch.WithAPIKey(config.Meilisearch.Key),
+		meilisearch.WithCustomClient(&http.Client{Timeout: 30 * time.Second}),
+	)
 	s := &SearchService{client: c}
 
 	index := c.Index(IndexName)
@@ -56,24 +60,26 @@ func NewSearchService(config Config) (*SearchService, error) {
 
 	request := meilisearch.DocumentsQuery{
 		Fields: []string{"publishedYear"},
-		Limit:  9_000,
+		Limit:  1_000,
 	}
-	var response meilisearch.DocumentsResult
-
-	err = index.GetDocuments(&request, &response)
-	if err != nil {
-		return nil, err
-	}
-
-	var years []struct {
-		PublishedYear int `json:"publishedYear"`
-	}
-	err = response.Results.DecodeInto(&years)
-	if err != nil {
-		return nil, fmt.Errorf("decode published years: %w", err)
-	}
-	for _, year := range years {
-		publishedYears = append(publishedYears, year.PublishedYear)
+	for {
+		var response meilisearch.DocumentsResult
+		if err := index.GetDocuments(&request, &response); err != nil {
+			return nil, err
+		}
+		var years []struct {
+			PublishedYear int `json:"publishedYear"`
+		}
+		if err := response.Results.DecodeInto(&years); err != nil {
+			return nil, fmt.Errorf("decode published years: %w", err)
+		}
+		for _, year := range years {
+			publishedYears = append(publishedYears, year.PublishedYear)
+		}
+		request.Offset += int64(len(years))
+		if len(years) == 0 || request.Offset >= response.Total {
+			break
+		}
 	}
 
 	publishedYears = unique(publishedYears)

@@ -21,6 +21,7 @@ type URLCheck struct {
 	Post     string
 	Status   int
 	Location string
+	Error    string
 }
 
 type YearNavigation struct {

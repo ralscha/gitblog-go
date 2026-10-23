@@ -62,6 +62,14 @@ func TestValidatePostHeader(t *testing.T) {
 	}
 }
 
+func TestReadPostSourceRequiresCompleteFrontMatterDelimiter(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "post.md")
+	writeTestFile(t, path, "---\ntitle: Post\n---invalid\nBody\n")
+	if _, _, err := readPostSource(path); err == nil {
+		t.Fatal("accepted an incomplete front matter delimiter")
+	}
+}
+
 func TestCleanupRemovesOrphansAndDraftsButPreservesReports(t *testing.T) {
 	dir := t.TempDir()
 	orphanHTML := filepath.Join(dir, "orphan.html")

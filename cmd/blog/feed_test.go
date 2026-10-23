@@ -2,12 +2,38 @@ package main
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestWriteSitemapPreservesBasePath(t *testing.T) {
+	app := &application{}
+	app.config.Blog.PostDir = t.TempDir()
+	app.config.Blog.URL = "https://example.com/blog"
+	posts := []PostMetadata{{URL: "post.html", Published: "2025-01-02T03:04:05Z"}}
+	if err := app.writeSitemap(posts); err != nil {
+		t.Fatal(err)
+	}
+	content, err := os.ReadFile(filepath.Join(app.config.Blog.PostDir, "sitemap.xml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sitemap struct {
+		URLs []struct {
+			Loc string `xml:"loc"`
+		} `xml:"url"`
+	}
+	if err := xml.Unmarshal(content, &sitemap); err != nil {
+		t.Fatal(err)
+	}
+	if len(sitemap.URLs) != 1 || sitemap.URLs[0].Loc != "https://example.com/blog/post.html" {
+		t.Fatalf("sitemap dropped base path: %s", content)
+	}
+}
 
 func TestWriteFeedsSortsNewestFirstAndUsesPublishedAsUpdatedFallback(t *testing.T) {
 	dir := t.TempDir()

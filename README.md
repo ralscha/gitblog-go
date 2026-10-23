@@ -14,8 +14,8 @@ Go application that builds and serves [blog.rasc.ch](https://blog.rasc.ch) from 
 
 ## Requirements
 
-- Go 1.27.1 or newer matching `go.mod`.
-- Node.js and npm only when rebuilding the CSS assets.
+- Go 1.27.3 or newer matching `go.mod`.
+- Node.js 22 or newer and npm only when rebuilding the CSS assets.
 - Docker for local Meilisearch, Inbucket, and Mermaid rendering.
 - Taskfile is optional, but the common commands are defined in `Taskfile.yml`.
 
@@ -24,8 +24,12 @@ Syntax highlighting uses [shiki-go](https://github.com/ralscha/shiki-go) in the 
 Install Node dependencies if you need to rebuild the CSS assets:
 
 ```sh
-cd css_build && npm install
+cd css_build
+npm ci
+npm run build
 ```
+
+The CSS build recreates `css_build/build` with the stylesheet, favicon, and gzip/Brotli variants. Deploy the stylesheet and its variants into the posts checkout's `assets` directory, and the favicon and its variants into the checkout root. Keep the referenced fonts in `assets/fonts`.
 
 ## Configuration
 
@@ -82,7 +86,7 @@ Useful commands:
 ```sh
 task tidy              # go fmt and go mod tidy
 task test              # run the Go test suite
-task audit             # go vet, staticcheck, go mod verify
+task audit             # go vet, staticcheck, govulncheck, go mod verify
 task build             # build the blog binary
 task build-linux-amd64 # cross-compile for Linux amd64
 go run gitblog/cmd/blog index  # rebuild the Meilisearch index

@@ -148,7 +148,7 @@ func (app *application) writeSitemap(postMetadata []PostMetadata) error {
 		updated = updated.Truncate(time.Second)
 
 		err = sm.Add(&smg.SitemapLoc{
-			Loc:        post.URL,
+			Loc:        absoluteBlogURL(app.config.Blog.URL, post.URL),
 			LastMod:    &updated,
 			ChangeFreq: smg.Yearly,
 			Priority:   0.7,

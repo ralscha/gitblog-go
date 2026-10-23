@@ -115,17 +115,20 @@ func runServer(logger *slog.Logger) error {
 		templates:         templates,
 	}
 
+	// Initialize publication before starting jobs that read the generated files.
+	err = app.updatePosts()
+	if err != nil {
+		<-app.taskScheduler.Shutdown()
+		return err
+	}
+
 	_, err = app.taskScheduler.ScheduleWithCron(func(ctx context.Context) {
 		if err := app.checkBrokenLinks(); err != nil {
 			app.logger.Error("broken-link check failed", "error", err)
 		}
 	}, "0 40 5 1 * *")
 	if err != nil {
-		return err
-	}
-
-	err = app.updatePosts()
-	if err != nil {
+		<-app.taskScheduler.Shutdown()
 		return err
 	}
 

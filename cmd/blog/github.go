@@ -56,20 +56,23 @@ func (gcs *GitHubCodeService) InsertCode(markdown string) (string, error) {
 		var err error
 		if match[6] != -1 {
 			from, err = strconv.Atoi(markdown[match[6]:match[7]])
-			if err != nil {
-				return "", err
+			if err != nil || from < 1 {
+				return "", fmt.Errorf("invalid starting line in %s", completeURL)
 			}
+			to = from
 		}
 		if match[8] != -1 {
 			to, err = strconv.Atoi(markdown[match[8]:match[9]])
-			if err != nil {
-				return "", err
+			if err != nil || to < from {
+				return "", fmt.Errorf("invalid ending line in %s", completeURL)
 			}
 		}
 
-		if from != 0 && to == 0 {
-			to = from
+		parts := strings.SplitN(url, "/", 4)
+		if len(parts) != 4 || parts[0] == "" || parts[1] == "" || parts[2] != "blob" || !strings.Contains(parts[3], "/") {
+			return "", fmt.Errorf("invalid GitHub file URL: %s", completeURL)
 		}
+		url = parts[0] + "/" + parts[1] + "/" + parts[3]
 
 		language := ""
 		if match[10] != -1 {
@@ -81,7 +84,9 @@ func (gcs *GitHubCodeService) InsertCode(markdown string) (string, error) {
 			}
 		}
 
-		url = strings.Replace(url, "/blob", "", 1)
+		if strings.ContainsAny(language, "`\r\n") {
+			return "", fmt.Errorf("invalid code language %q", language)
+		}
 		code, err := gcs.fetchCode(gitHubRawLink + url)
 		if err != nil {
 			return "", err
@@ -106,8 +111,9 @@ func (gcs *GitHubCodeService) InsertCode(markdown string) (string, error) {
 				fileName = url[lastSlash+1:]
 			}
 
-			replacement := fmt.Sprintf("\n```%s\n%s\n```\n<small class=\"gh\">[%s](%s%s)</small>\n",
-				language, replacementCode, fileName, gitHubLink, completeURL)
+			fence := codeFence(replacementCode)
+			replacement := fmt.Sprintf("\n%s%s\n%s\n%s\n<small class=\"gh\">[%s](%s%s)</small>\n",
+				fence, language, replacementCode, fence, fileName, gitHubLink, completeURL)
 
 			sb.WriteString(replacement)
 		}
@@ -117,6 +123,21 @@ func (gcs *GitHubCodeService) InsertCode(markdown string) (string, error) {
 	sb.WriteString(markdown[lastIndex:])
 
 	return sb.String(), nil
+}
+
+// A fetched Markdown file can itself contain fences. Use a longer delimiter so
+// its contents always remain source code, including any embedded HTML.
+func codeFence(code string) string {
+	longest, run := 2, 0
+	for _, char := range code {
+		if char == '`' {
+			run++
+			longest = max(longest, run)
+		} else {
+			run = 0
+		}
+	}
+	return strings.Repeat("`", longest+1)
 }
 
 func getLines(code string, from, to int) ([]string, error) {

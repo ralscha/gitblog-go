@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,10 +16,50 @@ import (
 
 type shutdownTestScheduler struct {
 	chrono.TaskScheduler
-	done chan bool
+	done   chan bool
+	called chan struct{}
 }
 
-func (s shutdownTestScheduler) Shutdown() chan bool { return s.done }
+func (s shutdownTestScheduler) Shutdown() chan bool {
+	if s.called != nil {
+		close(s.called)
+	}
+	return s.done
+}
+
+func TestServeHTTPWaitsForCleanupAfterBindFailure(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	scheduler := shutdownTestScheduler{done: make(chan bool), called: make(chan struct{})}
+	app := &application{logger: slog.New(slog.NewTextHandler(io.Discard, nil)), taskScheduler: scheduler}
+	app.config.HTTP.Port = listener.Addr().String()
+	app.config.HTTP.DefaultShutdownPeriodInSeconds = 1
+	done := make(chan error, 1)
+	go func() { done <- app.serveHTTP() }()
+	select {
+	case <-scheduler.called:
+	case <-time.After(3 * time.Second):
+		t.Fatal("scheduler was not stopped")
+	}
+	select {
+	case err := <-done:
+		close(scheduler.done)
+		t.Fatalf("returned before scheduled work finished: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+	close(scheduler.done)
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("listener failure was lost")
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("server did not finish cleanup")
+	}
+}
 
 func TestShutdownBoundsScheduledAndBackgroundWork(t *testing.T) {
 	for _, blocked := range []string{"scheduled", "background", "none"} {

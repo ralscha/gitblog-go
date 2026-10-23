@@ -12,6 +12,26 @@ import (
 	"testing"
 )
 
+func TestCheckBrokenLinksReportsConnectionFailures(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	server.Close()
+	dir := t.TempDir()
+	writeTestFile(t, filepath.Join(dir, "post.md"), "---\ntitle: Post\npublished: 2026-09-05T12:00:00Z\n---\nBody\n")
+	writeTestFile(t, filepath.Join(dir, "post.html"), `<a href="`+server.URL+`/unreachable">broken</a>`)
+	app := &application{logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	app.config.Blog.PostDir = dir
+	if err := app.checkBrokenLinks(); err != nil {
+		t.Fatal(err)
+	}
+	report, err := os.ReadFile(filepath.Join(dir, "report", "urlcheck.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(report), server.URL+"/unreachable") {
+		t.Fatalf("report omitted connection failure: %s", report)
+	}
+}
+
 func TestParseIgnoredURLs(t *testing.T) {
 	content := "\n# comment\n HTTPS://EXAMPLE.COM/path \r\n\thttps://other.example\t\n"
 	want := []string{"https://example.com/path", "https://other.example"}

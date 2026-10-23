@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 	"log/slog"
 	"net/http"
@@ -8,6 +11,36 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestGitHubWebhookValidatesSignedPayloads(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		payload    string
+		signingKey string
+		want       int
+	}{
+		{"valid ping", `{}`, "secret", http.StatusNoContent},
+		{"wrong signature", `{}`, "wrong", http.StatusUnauthorized},
+		{"malformed JSON", `{`, "secret", http.StatusBadRequest},
+		{"oversized body", strings.Repeat("x", (1<<20)+1), "secret", http.StatusRequestEntityTooLarge},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			app := &application{logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
+			app.config.Github.WebhookSecret = "secret"
+			request := httptest.NewRequest(http.MethodPost, "/githubCallback", strings.NewReader(tc.payload))
+			request.Header.Set("Content-Type", "application/json")
+			request.Header.Set("X-GitHub-Event", "ping")
+			mac := hmac.New(sha256.New, []byte(tc.signingKey))
+			_, _ = mac.Write([]byte(tc.payload))
+			request.Header.Set("X-Hub-Signature-256", "sha256="+hex.EncodeToString(mac.Sum(nil)))
+			recorder := httptest.NewRecorder()
+			app.routes().ServeHTTP(recorder, request)
+			if recorder.Code != tc.want {
+				t.Fatalf("status = %d, want %d", recorder.Code, tc.want)
+			}
+		})
+	}
+}
 
 func TestHealthHandler(t *testing.T) {
 	app := &application{logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
