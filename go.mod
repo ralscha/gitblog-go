@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	codnect.io/chrono v1.1.3
-	github.com/andybalholm/brotli v1.2.6
+	github.com/andybalholm/brotli v1.2.7
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.19.3
 	github.com/google/go-github/v89 v89.0.0
