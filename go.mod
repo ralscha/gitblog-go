@@ -17,12 +17,12 @@ require (
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.21.0
 	github.com/wneessen/go-mail v0.8.1
-	github.com/yuin/goldmark v1.8.6
+	github.com/yuin/goldmark v1.8.7
 	github.com/yuin/goldmark-emoji v1.0.6
 	go.abhg.dev/goldmark/anchor v0.2.0
 	go.abhg.dev/goldmark/mermaid v0.6.0
-	go.yaml.in/yaml/v3 v3.0.5
-	golang.org/x/net v0.61.0
+	go.yaml.in/yaml/v3 v3.0.6
+	golang.org/x/net v0.62.0
 )
 
 require (
