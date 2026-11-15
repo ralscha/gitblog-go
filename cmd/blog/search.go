@@ -48,7 +48,7 @@ func NewSearchService(config Config) (*SearchService, error) {
 	index := c.Index(IndexName)
 
 	filterableAttrs := []any{"publishedYear", "tags"}
-	task, err := index.UpdateFilterableAttributes(&filterableAttrs)
+	task, err := index.UpdateFilterableAttributes(context.Background(), &filterableAttrs)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func NewSearchService(config Config) (*SearchService, error) {
 	}
 	for {
 		var response meilisearch.DocumentsResult
-		if err := index.GetDocuments(&request, &response); err != nil {
+		if err := index.GetDocuments(context.Background(), &request, &response); err != nil {
 			return nil, err
 		}
 		var years []struct {
@@ -121,7 +121,7 @@ func unique(intSlice []int) []int {
 func (s *SearchService) waitForTask(taskUID int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	task, err := s.client.WaitForTaskWithContext(ctx, taskUID, 100*time.Millisecond)
+	task, err := s.client.WaitForTask(ctx, taskUID, 100*time.Millisecond)
 	if err != nil {
 		return fmt.Errorf("wait for search task %d: %w", taskUID, err)
 	}
@@ -168,18 +168,18 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) (resultErr error) {
 		}
 	}
 
-	settings, err := s.client.Index(IndexName).GetSettings()
+	settings, err := s.client.Index(IndexName).GetSettings(context.Background())
 	if err != nil {
 		return err
 	}
 	stagingName := IndexName + "_build_" + rand.Text()
-	task, err := s.client.CreateIndex(&meilisearch.IndexConfig{Uid: stagingName, PrimaryKey: "id"})
+	task, err := s.client.CreateIndex(context.Background(), &meilisearch.IndexConfig{Uid: stagingName, PrimaryKey: "id"})
 	if err != nil {
 		return err
 	}
 	defer func() {
 		// After a swap this name holds the retired index; before it, the failed build.
-		task, err := s.client.DeleteIndex(stagingName)
+		task, err := s.client.DeleteIndex(context.Background(), stagingName)
 		if err == nil {
 			err = s.waitForTask(task.TaskUID)
 		}
@@ -191,7 +191,7 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) (resultErr error) {
 		return err
 	}
 	staging := s.client.Index(stagingName)
-	task, err = staging.UpdateSettings(settings)
+	task, err = staging.UpdateSettings(context.Background(), settings)
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) (resultErr error) {
 		return err
 	}
 	if len(documents) > 0 {
-		task, err = staging.AddDocuments(documents, nil)
+		task, err = staging.AddDocuments(context.Background(), documents, nil)
 		if err != nil {
 			return err
 		}
@@ -207,7 +207,7 @@ func (s *SearchService) IndexPosts(posts []PostMetadata) (resultErr error) {
 			return err
 		}
 	}
-	task, err = s.client.SwapIndexes([]*meilisearch.SwapIndexesParams{{Indexes: []string{IndexName, stagingName}}})
+	task, err = s.client.SwapIndexes(context.Background(), []*meilisearch.SwapIndexesParams{{Indexes: []string{IndexName, stagingName}}})
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func (s *SearchService) SearchPostsOfYear(year int) ([]PostMetadata, error) {
 		Limit:                9_000,
 		AttributesToRetrieve: attributesToRetrieve,
 	}
-	response, err := s.client.Index(IndexName).Search("", &request)
+	response, err := s.client.Index(IndexName).Search(context.Background(), "", &request)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (s *SearchService) SearchWithTag(tag string) ([]PostMetadata, error) {
 		Limit:                9_000,
 		AttributesToRetrieve: attributesToRetrieve,
 	}
-	response, err := s.client.Index(IndexName).Search("", &request)
+	response, err := s.client.Index(IndexName).Search(context.Background(), "", &request)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +275,7 @@ func (s *SearchService) Search(query string) ([]PostMetadata, error) {
 		Limit:                9_000,
 		AttributesToRetrieve: attributesToRetrieve,
 	}
-	response, err := s.client.Index(IndexName).Search(query, &request)
+	response, err := s.client.Index(IndexName).Search(context.Background(), query, &request)
 	if err != nil {
 		return nil, err
 	}
